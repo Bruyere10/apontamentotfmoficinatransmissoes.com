@@ -67,7 +67,17 @@ const atividadesDisponiveis = [
     "Preparação de motor revista para devolução a manufatura, realização de check list",
     "Armazenamento dos componentes de motor em kit",
     "Substituição do suporte do A/C",
-    "Atividade troca de bateria H.V veículo J3U HEV"
+    "Atividade troca de bateria H.V veículo J3U HEV",
+    "Troca coletor de admissão",
+    "Substituir motor T3",
+    "Diagnose em veículo",
+    "Exposição dos componentes de motores na bancada da sala benchmarking ou no carrinho teardown.",
+    "Desmontagem parcial do motor com controle de torques.",
+    "Preparação de motor para Lea Motors China",
+    "Desmontagem de motor e preparação de componentes para controle dimensional realizado pela metrologia.",
+    "Descarte de peças.",
+    "Troca Óleo Motor.",
+    "Teste de funcionamento dos injetores vazão e pressão"
 ];
 
 const btnAdd = document.querySelector(".btn-add");
@@ -181,6 +191,7 @@ const LIMITE_PREVIEW_DOCUMENTOS = 4;
 let resumoPlanilhaCarregado = false;
 let historicoAtual = [];
 let apontamentoPendente = null;
+let linhaEditando = null; // Armazena qual linha está sendo editada
 let usuarioAtual = null;
 let desempenhoRegistrosPlanilha = null;
 let desempenhoPlanilhaMatricula = "";
@@ -2593,6 +2604,9 @@ function carregarTfmNoFormulario(dados) {
     const dataInicio = normalizarDataInput(dados.dataInicioTfm || dados.data);
     const dataFim = normalizarDataInput(dados.dataFimTfm || dados.dataInicioTfm || dados.data);
 
+    // Armazenar qual linha está sendo editada
+    linhaEditando = dados.linhaEditando || null;
+
     if (distribuicaoManualToggle) {
         distribuicaoManualToggle.checked = false;
         alternarDistribuicaoManual();
@@ -2631,6 +2645,7 @@ function carregarTfmNoFormulario(dados) {
     renumerarAtividades();
     atualizarResumoDistribuicaoManual();
     fecharModalTfm();
+    alternarAppTab("registro"); // Redireciona para a aba de dados
     mostrarFeedback("Dados carregados no formulário. Confira antes de salvar novamente.", "aviso");
 }
 
@@ -2759,7 +2774,8 @@ async function prepararDadosApontamento() {
                 atividade: atividade.atividade,
                 observacao: atividade.observacao
             }))
-        ))
+        )),
+        linhaEditando: linhaEditando
     };
 }
 
@@ -2769,6 +2785,11 @@ async function salvarApontamentoConfirmado() {
     }
 
     const dados = apontamentoPendente;
+
+    // Enviar informação sobre qual linha está sendo editada
+    if (linhaEditando) {
+        dados.linhaEditando = linhaEditando;
+    }
 
     try {
         iniciarAnimacaoSalvamento();
@@ -2838,6 +2859,7 @@ async function salvarApontamentoConfirmado() {
             }
         });
         limparColaboradoresAdicionais();
+        linhaEditando = null; // Limpar a informação de edição
         await carregarHistoricoPlanilha();
     } catch (erro) {
         pararAnimacaoSalvamento();

@@ -95,7 +95,28 @@ function doPost(evento) {
       }))
     ));
 
-    planilha.getRange(planilha.getLastRow() + 1, 1, linhas.length, cabecalhosPlanilha.length).setValues(linhas);
+    // Se está editando, deleta TODAS as linhas do TFM antes de adicionar as novas
+    if (dados.linhaEditando && Number.isInteger(dados.linhaEditando) && dados.linhaEditando > 1) {
+      const colunaTfm = obterIndiceCabecalho(cabecalhosPlanilha, ["TFM", "Numero do TFM", "Número do TFM"]);
+      const tfmEditando = String(dados.tfm || "").trim();
+      
+      if (colunaTfm >= 0 && tfmEditando) {
+        // Encontra e deleta TODAS as linhas deste TFM
+        const todosOsDados = planilha.getDataRange().getValues();
+        for (let i = todosOsDados.length - 1; i >= 1; i--) {
+          const tfmLinha = String(todosOsDados[i][colunaTfm] || "").trim();
+          if (tfmLinha === tfmEditando) {
+            planilha.deleteRow(i + 1);
+          }
+        }
+      }
+      
+      // Adiciona as novas linhas no final
+      planilha.getRange(planilha.getLastRow() + 1, 1, linhas.length, cabecalhosPlanilha.length).setValues(linhas);
+    } else {
+      // Se é um novo registro, adiciona no final
+      planilha.getRange(planilha.getLastRow() + 1, 1, linhas.length, cabecalhosPlanilha.length).setValues(linhas);
+    }
 
     if (dados.cadastroPendente) {
       salvarCadastroPendente(dados);
@@ -548,6 +569,7 @@ function buscarDocumentosPorTfms(tfms) {
     if (!resultado.encontrado) {
       Object.assign(resultado, {
         encontrado: true,
+        linhaEditando: indice + 1, // Número da linha para edição
         data: colunaData >= 0 ? linha[colunaData] : "",
         turno: colunaTurno >= 0 ? linha[colunaTurno] : "",
         nome: nomeLinha,
