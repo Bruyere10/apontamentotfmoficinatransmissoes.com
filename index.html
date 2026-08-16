@@ -14,6 +14,7 @@
     <link rel="manifest" href="site.webmanifest">
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="site-help.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
@@ -455,8 +456,13 @@
             <aside class="app-sidebar" aria-label="Navegação de dados">
                 <button type="button" class="app-nav-btn app-nav-btn-ativo" data-app-tab="registro">
                     <i class="bi bi-clipboard-check"></i>
-                    <span>Registro de TFM</span>
+                    <span>Registrar TFM fechado</span>
                 </button>
+
+                <a class="app-nav-btn" href="abrir-tfm.html">
+                    <i class="bi bi-folder-plus"></i>
+                    <span>Abrir TFM</span>
+                </a>
 
                 <button type="button" class="app-nav-btn" data-app-tab="consulta">
                     <i class="bi bi-search"></i>
@@ -575,7 +581,7 @@
                                 <div class="autocomplete-wrapper">
                                     <div class="input-icon">
                                         <i class="bi bi-person"></i>
-                                        <input id="nome" name="nome" type="text" class="colaborador-input" placeholder="Digite seu Nome" autocomplete="off" required>
+                                        <input id="nome" name="nome" type="text" class="colaborador-input" placeholder="Digite seu Nome" autocomplete="off" required readonly aria-readonly="true">
                                     </div>
                                     <div class="atividade-sugestoes" hidden></div>
 
@@ -618,7 +624,7 @@
                                 <label for="matricula">Matrícula</label>
                                 <div class="input-icon">
                                     <i class="bi bi-hash"></i>
-                                    <input id="matricula" name="matricula" type="text" placeholder="Sua Matrícula" inputmode="numeric" autocomplete="off" required>
+                                    <input id="matricula" name="matricula" type="text" placeholder="Sua Matrícula" inputmode="numeric" autocomplete="off" required readonly aria-readonly="true">
                                 </div>
                             </div>
 
@@ -763,6 +769,147 @@
             </button>
 
         </form>
+
+                <section class="app-tab-panel painel-dados modulo-tfm-aberto" data-app-panel="abrir-tfm" hidden>
+                    <aside class="tfm-aberto-sidebar" aria-label="Navegação de TFMs abertos">
+                        <span>TFM aberto</span>
+                        <button type="button" class="tfm-aberto-nav-btn tfm-aberto-nav-btn-ativo" data-tfm-aberto-view="dados">
+                            <i class="bi bi-folder-plus"></i>
+                            <span>Dados</span>
+                        </button>
+                        <button type="button" class="tfm-aberto-nav-btn" data-tfm-aberto-view="andamento">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span>TFMs em andamento</span>
+                        </button>
+                    </aside>
+
+                    <div class="tfm-aberto-conteudo">
+                        <div data-tfm-aberto-panel="dados">
+                            <div class="painel-dados-topo">
+                                <span>Novo trabalho contínuo</span>
+                                <h1>Abrir TFM</h1>
+                                <p>Cadastre um TFM em andamento. Ele só será enviado ao BI quando o host finalizar o trabalho.</p>
+                            </div>
+
+                            <form id="form-abrir-tfm" class="card tfm-aberto-form" novalidate>
+                        <div class="card-titulo">
+                            <i class="bi bi-folder-plus"></i>
+                            <h2>Dados iniciais</h2>
+                        </div>
+                        <div class="linha"></div>
+                        <div class="form-grid dados-grid">
+                            <div class="campo campo-metade">
+                                <label for="aberto-data-inicial">Data inicial</label>
+                                <div class="input-icon">
+                                    <i class="bi bi-calendar-event"></i>
+                                    <input id="aberto-data-inicial" type="date" required>
+                                </div>
+                            </div>
+                            <div class="campo campo-metade">
+                                <label for="aberto-turno">Turno</label>
+                                <div class="input-icon">
+                                    <i class="bi bi-clock"></i>
+                                    <select id="aberto-turno" required>
+                                        <option value="">Selecione</option>
+                                        <option>1º Turno</option>
+                                        <option>2º Turno</option>
+                                        <option>Administrativo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="campo campo-metade">
+                                <label for="aberto-tfm">Número do TFM</label>
+                                <div class="input-icon">
+                                    <i class="bi bi-hash"></i>
+                                    <input id="aberto-tfm" type="text" maxlength="6" inputmode="numeric" placeholder="000000" required>
+                                </div>
+                            </div>
+                            <div class="campo campo-metade">
+                                <label for="aberto-projeto">Código do projeto</label>
+                                <div class="input-icon">
+                                    <i class="bi bi-briefcase"></i>
+                                    <input id="aberto-projeto" type="text" placeholder="Código do projeto">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="aberto-feedback" class="feedback-global" role="status" aria-live="polite" hidden></div>
+                        <button type="submit" class="btn-acao-tfm-aberto">
+                            <i class="bi bi-folder-plus"></i>
+                            <span>Abrir TFM em andamento</span>
+                        </button>
+                            </form>
+                        </div>
+
+                        <div data-tfm-aberto-panel="andamento" hidden>
+                            <div class="painel-dados-topo tfms-abertos-topo">
+                                <div>
+                                    <span>Trabalhos contínuos</span>
+                                    <h1>TFMs em andamento</h1>
+                                    <p>Adicione suas horas diárias. Somente o host pode finalizar e enviar o TFM ao BI.</p>
+                                </div>
+                                <button type="button" id="btn-atualizar-tfms-abertos" class="btn-icone-texto">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    <span>Atualizar</span>
+                                </button>
+                            </div>
+
+                            <div id="tfms-abertos-status" class="tfms-abertos-status">Carregando TFMs em andamento...</div>
+                            <div id="tfms-abertos-lista" class="tfms-abertos-lista"></div>
+
+                            <form id="form-horas-tfm-aberto" class="card tfm-aberto-form" hidden novalidate>
+                        <div class="card-titulo tfm-aberto-form-topo">
+                            <div>
+                                <i class="bi bi-clock-history"></i>
+                                <h2>Adicionar horas ao TFM <span id="horas-tfm-numero">-</span></h2>
+                            </div>
+                            <button type="button" id="btn-fechar-form-horas" class="btn-fechar-modal" aria-label="Fechar lançamento">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="linha"></div>
+                        <input id="horas-tfm-id" type="hidden">
+                        <div class="form-grid dados-grid">
+                            <div class="campo campo-metade">
+                                <label for="horas-tfm-data">Dia trabalhado</label>
+                                <div class="input-icon">
+                                    <i class="bi bi-calendar-check"></i>
+                                    <input id="horas-tfm-data" type="date" required>
+                                </div>
+                            </div>
+                            <div class="campo campo-metade">
+                                <label for="horas-tfm-quantidade">Horas trabalhadas</label>
+                                <div class="input-icon">
+                                    <i class="bi bi-clock"></i>
+                                    <input id="horas-tfm-quantidade" type="text" inputmode="decimal" placeholder="Ex: 7.5" required>
+                                </div>
+                            </div>
+                            <div class="campo campo-inteiro">
+                                <label for="horas-tfm-atividade">Atividade realizada</label>
+                                <div class="autocomplete-wrapper">
+                                    <div class="input-icon">
+                                        <i class="bi bi-list-task"></i>
+                                        <input id="horas-tfm-atividade" type="text" placeholder="Digite ou selecione a atividade" autocomplete="off" required>
+                                    </div>
+                                    <div class="atividade-sugestoes" hidden></div>
+                                </div>
+                            </div>
+                            <div class="campo campo-inteiro">
+                                <label for="horas-tfm-observacao">Observação</label>
+                                <div class="input-icon input-textarea">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    <textarea id="horas-tfm-observacao" rows="3" placeholder="Opcional"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="horas-tfm-feedback" class="feedback-global" role="status" aria-live="polite" hidden></div>
+                        <button type="submit" class="btn-acao-tfm-aberto">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Adicionar lançamento diário</span>
+                        </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
 
                 <section class="app-tab-panel painel-dados painel-desempenho" data-app-panel="desempenho" hidden>
                     <div class="painel-dados-topo">
@@ -1027,7 +1174,9 @@
         </section>
     </div>
 
+    <script src="atividades.js"></script>
     <script src="script.js?v=20260731-1"></script>
+    <script src="site-help.js"></script>
 </body>
 
 </html>

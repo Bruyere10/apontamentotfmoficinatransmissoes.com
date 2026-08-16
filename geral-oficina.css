@@ -45,7 +45,97 @@ body{
     display:flex;
     justify-content:space-between;
     min-height:74px;
+    margin-left:176px;
     padding:10px 22px;
+}
+
+.geral-navegacao{
+    background:#001e62;
+    bottom:0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    left:0;
+    overflow-y:auto;
+    padding:24px 12px 22px;
+    position:fixed;
+    top:0;
+    width:176px;
+    z-index:5;
+}
+
+.geral-navegacao > span{
+    color:#86b8ee;
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:0.08em;
+    padding:0 12px 10px;
+    text-transform:uppercase;
+}
+
+.geral-navegacao button{
+    align-items:center;
+    background:transparent;
+    border:0;
+    border-left:3px solid transparent;
+    border-radius:4px;
+    color:#d5e3f7;
+    cursor:pointer;
+    display:flex;
+    font:inherit;
+    font-size:12px;
+    font-weight:800;
+    gap:10px;
+    min-height:42px;
+    padding:10px 12px;
+    text-align:left;
+}
+
+.geral-navegacao button:hover,
+.geral-navegacao button:focus-visible{
+    background:rgba(255,255,255,0.1);
+    color:#ffffff;
+    outline:none;
+}
+
+.geral-navegacao .geral-nav-ativo{
+    background:#ffffff;
+    border-left-color:#00a3e0;
+    color:#001e62;
+}
+
+.geral-navegacao .geral-navegacao-secao{
+    border-top:1px solid rgba(255,255,255,0.15);
+    margin-top:12px;
+    padding-top:16px;
+}
+
+.geral-navegacao-modo{
+    background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:5px;
+    display:grid;
+    gap:3px;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    padding:3px;
+}
+
+.geral-navegacao .geral-navegacao-modo button{
+    border:0;
+    justify-content:center;
+    min-height:32px;
+    padding:6px 4px;
+    text-align:center;
+    text-transform:uppercase;
+}
+
+.geral-navegacao .geral-navegacao-modo .geral-modo-ativo{
+    background:#ffffff;
+    color:#001e62;
+}
+
+[data-geral-view-content][hidden]{
+    display:none;
 }
 
 .oficina-marca,
@@ -122,10 +212,10 @@ body{
 
 .oficina-app{
     display:grid;
-    gap:18px;
-    margin:0 auto;
-    max-width:1440px;
-    padding:26px 22px 40px;
+    gap:10px;
+    margin-left:176px;
+    max-width:none;
+    padding:16px 22px 36px;
 }
 
 .oficina-hero{
@@ -255,6 +345,10 @@ body{
     grid-template-columns:repeat(4, minmax(0, 1fr));
 }
 
+.oficina-resumo-geral{
+    grid-template-columns:repeat(5, minmax(0, 1fr));
+}
+
 .oficina-resumo article,
 .grafico-card{
     background:rgba(255,255,255,0.96);
@@ -267,7 +361,8 @@ body{
     display:grid;
     gap:6px;
     min-width:0;
-    padding:16px;
+    min-height:82px;
+    padding:12px;
 }
 
 .oficina-resumo span{
@@ -291,7 +386,7 @@ body{
     color:var(--muted);
     font-size:14px;
     font-weight:800;
-    padding:16px;
+    padding:12px;
 }
 
 .oficina-status[hidden],
@@ -301,15 +396,134 @@ body{
 
 .oficina-dashboard{
     display:grid;
-    gap:18px;
+    gap:10px;
     grid-template-columns:1fr;
+}
+
+.geral-visao-grid{
+    display:grid;
+    gap:10px;
+    grid-template-columns:minmax(0, 1.35fr) minmax(320px, 0.65fr);
+}
+
+.geral-card-indicador{
+    background:#eef4fd;
+    border:1px solid #d7e0ee;
+    border-radius:999px;
+    color:#001e62;
+    font-size:10px;
+    padding:6px 9px;
+    white-space:nowrap;
+}
+
+.geral-calendario-semanal{
+    display:grid;
+    gap:5px;
+    grid-template-columns:repeat(7, minmax(70px, 1fr));
+}
+
+.geral-semana-dia{
+    background:rgba(0,30,98,var(--intensidade-semana));
+    border:1px solid rgba(0,30,98,0.14);
+    border-radius:5px;
+    color:#001e62;
+    cursor:pointer;
+    display:grid;
+    font:inherit;
+    gap:4px;
+    min-height:72px;
+    padding:8px;
+    text-align:left;
+}
+
+.geral-semana-dia:hover,
+.geral-semana-dia:focus-visible{
+    border-color:#2f80ed;
+    box-shadow:inset 0 0 0 2px rgba(47,128,237,0.25);
+    outline:none;
+}
+
+.geral-semana-dia span{
+    color:#62708a;
+    font-size:9px;
+    font-weight:900;
+    text-transform:capitalize;
+}
+
+.geral-semana-dia strong{
+    font-size:15px;
+}
+
+.geral-semana-dia small{
+    font-size:9px;
+    font-weight:900;
+}
+
+.geral-semana-dia-vazio{
+    background:#f8fbff;
+    border-style:dashed;
+    color:#62708a;
+}
+
+.geral-top-atividades{
+    display:grid;
+    gap:8px;
+}
+
+.geral-top-atividades article{
+    display:grid;
+    gap:4px;
+    min-width:0;
+}
+
+.geral-top-atividades article > div:first-child{
+    align-items:center;
+    display:grid;
+    gap:10px;
+    grid-template-columns:minmax(0, 1fr) auto;
+    min-width:0;
+}
+
+.geral-top-atividades article > div:first-child span{
+    color:#001e62;
+    font-size:10px;
+    font-weight:900;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.geral-top-atividades article > div:first-child strong{
+    color:#2458b8;
+    font-size:10px;
+    max-width:74px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.geral-top-atividades article > div:last-child{
+    background:#e6edf8;
+    border-radius:999px;
+    height:6px;
+    max-width:100%;
+    overflow:hidden;
+    width:100%;
+}
+
+.geral-top-atividades article > div:last-child span{
+    background:linear-gradient(90deg, #001e62, #00a3e0);
+    border-radius:inherit;
+    display:block;
+    height:100%;
 }
 
 .grafico-card{
     display:grid;
     gap:16px;
     min-width:0;
-    padding:18px;
+    padding:14px;
 }
 
 .grafico-card-topo{
@@ -332,6 +546,60 @@ body{
 .calendario-topo{
     align-items:start;
     gap:16px;
+}
+
+.calendario-segmentador{
+    align-items:end;
+    background:#eef4fd;
+    border:1px solid #d7e0ee;
+    border-radius:7px;
+    display:grid;
+    gap:6px;
+    grid-template-columns:44px minmax(220px, 1fr) 44px;
+    padding:6px;
+}
+
+.calendario-segmentador label span{
+    color:#62708a;
+    display:block;
+    font-size:10px;
+    font-weight:900;
+    margin:0 0 4px 2px;
+    text-transform:uppercase;
+}
+
+.calendario-segmentador input,
+.calendario-segmentador button{
+    background:#ffffff;
+    border:1px solid #bfd0ea;
+    border-radius:5px;
+    color:#001e62;
+    font:inherit;
+    font-weight:900;
+    min-height:44px;
+}
+
+.calendario-segmentador input{
+    font-size:16px;
+    padding:8px 11px;
+    width:100%;
+}
+
+.calendario-segmentador button{
+    cursor:pointer;
+    font-size:18px;
+    width:44px;
+}
+
+.calendario-segmentador button:hover,
+.calendario-segmentador button:focus-visible{
+    background:#f7faff;
+    border-color:#2f80ed;
+    outline:none;
+}
+
+.calendario-filtros-internos{
+    display:none;
 }
 
 .calendario-filtros{
@@ -386,10 +654,28 @@ body{
     padding:12px;
 }
 
+.calendario-semana-cabecalho,
 .calendario-planilha{
     display:grid;
     gap:8px;
-    grid-template-columns:repeat(auto-fit, minmax(92px, 1fr));
+    grid-template-columns:repeat(7, minmax(100px, 1fr));
+}
+
+.calendario-semana-cabecalho{
+    margin-bottom:0;
+}
+
+.calendario-semana-cabecalho span{
+    color:#62708a;
+    font-size:11px;
+    font-weight:900;
+    padding:4px 10px;
+    text-align:right;
+    text-transform:uppercase;
+}
+
+.calendario-dia-espaco{
+    min-height:104px;
 }
 
 .calendario-dia{
@@ -399,20 +685,30 @@ body{
     color:var(--azul);
     cursor:pointer;
     display:grid;
-    gap:7px;
-    min-height:68px;
-    padding:9px;
+    align-content:space-between;
+    gap:10px;
+    min-height:104px;
+    padding:12px;
     text-align:left;
+    transition:border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.calendario-dia:hover,
+.calendario-dia:focus-visible{
+    border-color:#2f80ed;
+    box-shadow:0 8px 18px rgba(0,30,98,0.12);
+    outline:none;
+    transform:translateY(-2px);
 }
 
 .calendario-dia span{
     color:var(--muted);
-    font-size:11px;
+    font-size:12px;
     font-weight:900;
 }
 
 .calendario-dia strong{
-    font-size:13px;
+    font-size:18px;
     line-height:1.2;
 }
 
@@ -424,7 +720,7 @@ body{
 
 .calendario-dia-ativo{
     border-color:var(--azul-claro);
-    box-shadow:inset 0 0 0 2px rgba(47,128,237,0.18);
+    box-shadow:inset 0 0 0 2px rgba(47,128,237,0.22);
 }
 
 .calendario-vazio{
@@ -439,11 +735,104 @@ body{
 }
 
 .pizza-layout{
-    align-items:center;
+    align-items:start;
     display:grid;
     gap:18px;
-    grid-template-columns:minmax(220px, 340px) minmax(0, 1fr);
+    grid-template-columns:1fr;
+    justify-items:center;
     min-width:0;
+}
+
+.distribuicao-topo{
+    align-items:end;
+    gap:18px;
+}
+
+.distribuicao-combobox{
+    min-width:min(360px, 42vw);
+    position:relative;
+}
+
+.distribuicao-combobox > label{
+    color:#62708a;
+    display:block;
+    font-size:9px;
+    font-weight:900;
+    margin:0 0 5px 2px;
+    text-transform:uppercase;
+}
+
+.distribuicao-busca-wrap{
+    align-items:center;
+    background:#f7faff;
+    border:1px solid #c8d6ee;
+    border-radius:6px;
+    color:#62708a;
+    display:grid;
+    grid-template-columns:auto minmax(0, 1fr) 34px;
+    padding-left:10px;
+}
+
+.distribuicao-busca-wrap input{
+    background:transparent;
+    border:0;
+    color:#001e62;
+    font:inherit;
+    font-size:12px;
+    font-weight:800;
+    min-height:40px;
+    outline:none;
+    padding:7px 9px;
+    width:100%;
+}
+
+.distribuicao-busca-wrap button{
+    background:transparent;
+    border:0;
+    color:#62708a;
+    cursor:pointer;
+    min-height:34px;
+}
+
+.distribuicao-opcoes{
+    background:#ffffff;
+    border:1px solid #c8d6ee;
+    border-radius:6px;
+    box-shadow:0 14px 28px rgba(15,23,42,0.16);
+    display:grid;
+    left:0;
+    max-height:280px;
+    overflow-y:auto;
+    padding:5px;
+    position:absolute;
+    right:0;
+    top:calc(100% + 5px);
+    z-index:12;
+}
+
+.distribuicao-opcoes[hidden]{
+    display:none;
+}
+
+.distribuicao-opcoes button{
+    background:transparent;
+    border:0;
+    border-radius:4px;
+    color:#172033;
+    cursor:pointer;
+    font:inherit;
+    font-size:11px;
+    font-weight:800;
+    padding:9px 10px;
+    text-align:left;
+}
+
+.distribuicao-opcoes button:hover,
+.distribuicao-opcoes button:focus-visible,
+.distribuicao-opcoes button[aria-selected="true"]{
+    background:#eef4fd;
+    color:#001e62;
+    outline:none;
 }
 
 .grafico-pizza{
@@ -490,6 +879,7 @@ body{
     gap:8px;
     grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
     min-width:0;
+    width:100%;
 }
 
 .pizza-legenda article{
@@ -597,12 +987,78 @@ body{
 }
 
 @media(max-width:1180px){
-    .pizza-layout{
-        grid-template-columns:minmax(220px, 300px) minmax(0, 1fr);
+    .oficina-header,
+    .oficina-app{
+        margin-left:150px;
     }
+
+    .geral-navegacao{
+        width:150px;
+    }
+
+    .geral-visao-grid{
+        grid-template-columns:1fr;
+    }
+
 }
 
 @media(max-width:760px){
+    .oficina-header,
+    .oficina-app{
+        margin-left:0;
+    }
+
+    .geral-navegacao{
+        bottom:auto;
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        overflow:visible;
+        padding:8px 12px;
+        position:static;
+        width:auto;
+    }
+
+    .geral-navegacao > span{
+        display:none;
+    }
+
+    .geral-navegacao .geral-navegacao-secao{
+        display:none;
+    }
+
+    .geral-navegacao-modo{
+        grid-column:1 / -1;
+    }
+
+    .geral-calendario-semanal{
+        gap:3px;
+        grid-template-columns:repeat(7, minmax(38px, 1fr));
+    }
+
+    .geral-semana-dia{
+        min-height:58px;
+        padding:5px;
+    }
+
+    .geral-semana-dia strong{
+        font-size:12px;
+    }
+
+    .geral-semana-dia small{
+        display:none;
+    }
+
+    .geral-navegacao button{
+        border-bottom:3px solid transparent;
+        border-left:0;
+        justify-content:center;
+        padding-inline:6px;
+    }
+
+    .geral-navegacao .geral-nav-ativo{
+        border-bottom-color:#00a3e0;
+    }
+
     .oficina-header,
     .oficina-hero{
         align-items:stretch;
@@ -650,6 +1106,44 @@ body{
         flex-direction:column;
     }
 
+    .calendario-segmentador{
+        grid-template-columns:40px minmax(0, 1fr) 40px;
+    }
+
+    .calendario-segmentador button{
+        width:40px;
+    }
+
+    .calendario-semana-cabecalho,
+    .calendario-planilha{
+        gap:3px;
+        grid-template-columns:repeat(7, minmax(38px, 1fr));
+    }
+
+    .calendario-semana-cabecalho span{
+        font-size:8px;
+        padding:3px;
+        text-align:center;
+    }
+
+    .calendario-dia,
+    .calendario-dia-espaco{
+        min-height:62px;
+    }
+
+    .calendario-dia{
+        gap:3px;
+        padding:5px;
+    }
+
+    .calendario-dia span{
+        font-size:9px;
+    }
+
+    .calendario-dia strong{
+        font-size:11px;
+    }
+
     .calendario-filtros{
         grid-template-columns:1fr;
     }
@@ -657,6 +1151,16 @@ body{
     .pizza-layout{
         grid-template-columns:1fr;
         justify-items:center;
+    }
+
+    .distribuicao-topo{
+        align-items:stretch;
+        display:grid;
+    }
+
+    .distribuicao-combobox{
+        min-width:0;
+        width:100%;
     }
 
     .pizza-legenda{

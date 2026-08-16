@@ -1,4 +1,6 @@
 const LOGIN_CHAVE = "stellantisUsuarioLogado";
+const DESEMPENHO_CACHE_PREFIXO = "stellantisDesempenho:";
+const DESEMPENHO_CACHE_DURACAO = 24 * 60 * 60 * 1000;
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycpTr1Vj5nCByX2gYKvaXnhw7EiBUYqlnRq7ClSoqr2ZNBNvAUqvW2br6ksyAJDcxO/exec";
 
 const usuarioDesempenho = document.getElementById("usuario-desempenho");
@@ -8,6 +10,7 @@ const desempenhoColaboradorMatricula = document.getElementById("desempenho-colab
 const btnAtualizarDesempenho = document.getElementById("btn-atualizar-desempenho");
 const desempenhoDashboard = document.getElementById("desempenho-dashboard");
 const desempenhoTotalHoras = document.getElementById("desempenho-total-horas");
+const desempenhoHorasAndamento = document.getElementById("desempenho-horas-andamento");
 const desempenhoTotalAtividades = document.getElementById("desempenho-total-atividades");
 const desempenhoTotalTfms = document.getElementById("desempenho-total-tfms");
 const desempenhoDiasApontados = document.getElementById("desempenho-dias-apontados");
@@ -26,6 +29,22 @@ const desempenhoTfmsTotal = document.getElementById("desempenho-tfms-total");
 const desempenhoTfmsLista = document.getElementById("desempenho-tfms-lista");
 const desempenhoAtalhos = document.querySelectorAll("[data-desempenho-periodo]");
 const modoDesempenhoBotoes = document.querySelectorAll("[data-modo-desempenho]");
+const modoDesempenhoLateralBotoes = document.querySelectorAll("[data-desempenho-modo-lateral]");
+const desempenhoNavegacaoBotoes = document.querySelectorAll("[data-desempenho-view]");
+const desempenhoVisoes = document.querySelectorAll("[data-desempenho-view-content]");
+const desempenhoMes = document.getElementById("desempenho-mes");
+const desempenhoMesAnterior = document.getElementById("desempenho-mes-anterior");
+const desempenhoMesSeguinte = document.getElementById("desempenho-mes-seguinte");
+const desempenhoCalendarioMensal = document.getElementById("desempenho-calendario-mensal");
+const desempenhoBuscaTfm = document.getElementById("desempenho-busca-tfm");
+const desempenhoViewTfmsTotal = document.getElementById("desempenho-view-tfms-total");
+const desempenhoViewTfmsLista = document.getElementById("desempenho-view-tfms-lista");
+const desempenhoBuscaAtividade = document.getElementById("desempenho-busca-atividade");
+const desempenhoViewAtividadesTotal = document.getElementById("desempenho-view-atividades-total");
+const desempenhoViewAtividadesLista = document.getElementById("desempenho-view-atividades-lista");
+const desempenhoAbertosTotal = document.getElementById("desempenho-abertos-total");
+const desempenhoAbertosStatus = document.getElementById("desempenho-abertos-status");
+const desempenhoAbertosLista = document.getElementById("desempenho-abertos-lista");
 
 let usuarioAtual = null;
 let desempenhoRegistrosPlanilha = [];
@@ -33,12 +52,39 @@ let desempenhoCarregando = false;
 let desempenhoErro = "";
 let requisicaoAtual = 0;
 let modoDesempenho = "horas";
+let dataDesempenhoSelecionada = "";
+let visaoDesempenho = "geral";
 
 function obterLoginSalvo() {
     try {
         return JSON.parse(localStorage.getItem(LOGIN_CHAVE));
     } catch (erro) {
         return null;
+    }
+}
+
+function obterCacheDesempenho(matricula) {
+    try {
+        const cache = JSON.parse(localStorage.getItem(`${DESEMPENHO_CACHE_PREFIXO}${matricula}`));
+
+        if (!Array.isArray(cache?.registros) || Date.now() - Number(cache.salvoEm || 0) > DESEMPENHO_CACHE_DURACAO) {
+            return null;
+        }
+
+        return cache.registros;
+    } catch (erro) {
+        return null;
+    }
+}
+
+function salvarCacheDesempenho(matricula, registros) {
+    try {
+        localStorage.setItem(`${DESEMPENHO_CACHE_PREFIXO}${matricula}`, JSON.stringify({
+            salvoEm: Date.now(),
+            registros
+        }));
+    } catch (erro) {
+        console.warn("Não foi possível armazenar o cache do desempenho.", erro);
     }
 }
 
@@ -81,6 +127,17 @@ function obterNomeIndicador() {
     return modoDesempenho === "tfms" ? "TFMs" : "Horas";
 }
 
+function atualizarModoDesempenho(novoModo) {
+    modoDesempenho = novoModo;
+    modoDesempenhoBotoes.forEach((botao) => {
+        botao.classList.toggle("oficina-modo-ativo", botao.dataset.modoDesempenho === modoDesempenho);
+    });
+    modoDesempenhoLateralBotoes.forEach((botao) => {
+        botao.classList.toggle("desempenho-modo-ativo", botao.dataset.desempenhoModoLateral === modoDesempenho);
+    });
+    atualizarDesempenho();
+}
+
 function normalizarDataInput(valor) {
     if (!valor) {
         return "";
@@ -118,6 +175,14 @@ function obterDiaSemana(valor) {
     return criarDataLocal(valor).toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
 }
 
+function normalizarBusca(valor) {
+    return String(valor || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
 function criarDatasPeriodo(inicio, fim) {
     if (!inicio || !fim || inicio > fim) {
         return [];
@@ -133,6 +198,48 @@ function criarDatasPeriodo(inicio, fim) {
     }
 
     return datas;
+}
+
+function obterSemanaDaData(valor) {
+    const data = criarDataLocal(valor);
+    const deslocamentoSegunda = (data.getDay() + 6) % 7;
+    data.setDate(data.getDate() - deslocamentoSegunda);
+    const inicio = formatarDataIso(data);
+    data.setDate(data.getDate() + 6);
+
+    return criarDatasPeriodo(inicio, formatarDataIso(data));
+}
+
+function obterDataAncoraCalendario(timeline) {
+    return dataDesempenhoSelecionada || timeline[timeline.length - 1]?.data || formatarDataIso(new Date());
+}
+
+function obterIntensidadeCargaAlta(horas) {
+    if (horas <= 9) {
+        return 0;
+    }
+
+    const intensidadeBase = Math.min((horas - 9) / 15, 1);
+    const intensidadeExtra = horas > 24 ? Math.min((horas - 24) / 24, 1) : 0;
+    return 0.12 + intensidadeBase * 0.24 + intensidadeExtra * 0.22;
+}
+
+function alterarVisaoDesempenho(visao) {
+    visaoDesempenho = visao;
+    desempenhoNavegacaoBotoes.forEach((botao) => {
+        const ativo = botao.dataset.desempenhoView === visao;
+        botao.classList.toggle("desempenho-nav-ativo", ativo);
+        botao.setAttribute("aria-current", ativo ? "page" : "false");
+    });
+    desempenhoVisoes.forEach((conteudo) => {
+        conteudo.hidden = conteudo.dataset.desempenhoViewContent !== visao;
+    });
+
+    if (visao === "calendario") {
+        renderizarCalendarioMensal();
+    } else if (visao === "tfms" || visao === "atividades") {
+        renderizarVisoesDetalhadas();
+    }
 }
 
 function obterMatriculaDesempenho() {
@@ -202,16 +309,23 @@ function obterPeriodoCalendario(timeline) {
     };
 }
 
-function atualizarInfoPeriodoDesempenho(totalBanco, totalFiltrado) {
+function atualizarInfoPeriodoDesempenho(totalBanco, totalFiltrado, totalExibido) {
     const { inicio, fim } = obterPeriodoDesempenho();
 
     if (desempenhoCarregando) {
-        desempenhoPeriodoInfo.textContent = "Carregando seus registros do banco de dados...";
+        desempenhoPeriodoInfo.textContent = totalBanco
+            ? "Exibindo os últimos dados disponíveis enquanto buscamos atualizações..."
+            : "Carregando seus registros do banco de dados...";
         return;
     }
 
     if (desempenhoErro) {
         desempenhoPeriodoInfo.textContent = desempenhoErro;
+        return;
+    }
+
+    if (dataDesempenhoSelecionada) {
+        desempenhoPeriodoInfo.textContent = `${totalExibido} registro(s) em ${formatarData(dataDesempenhoSelecionada)}. Clique novamente no dia selecionado para exibir todo o período.`;
         return;
     }
 
@@ -230,6 +344,7 @@ function consolidarDesempenho(registros) {
     const dias = new Map();
     const tfms = new Set();
     let totalHoras = 0;
+    let totalHorasAndamento = 0;
 
     registros.forEach((registro) => {
         const atividade = String(registro.atividade || "Atividade sem nome").trim() || "Atividade sem nome";
@@ -245,6 +360,9 @@ function consolidarDesempenho(registros) {
         }
 
         totalHoras += horas;
+        if (registro.emAndamento) {
+            totalHorasAndamento += horas;
+        }
         const acumulado = atividades.get(atividade) || { atividade, horas: 0, registros: 0, tfmsSet: new Set() };
         acumulado.horas += horas;
         acumulado.registros += 1;
@@ -256,8 +374,11 @@ function consolidarDesempenho(registros) {
         atividades.set(atividade, acumulado);
 
         if (data) {
-            const dia = dias.get(data) || { data, horas: 0, registros: 0, tfmsSet: new Set() };
+            const dia = dias.get(data) || { data, horas: 0, horasAndamento: 0, registros: 0, tfmsSet: new Set() };
             dia.horas += horas;
+            if (registro.emAndamento) {
+                dia.horasAndamento += horas;
+            }
             dia.registros += 1;
 
             if (registro.tfm) {
@@ -280,6 +401,7 @@ function consolidarDesempenho(registros) {
         .map((item) => ({
             data: item.data,
             horas: item.horas,
+            horasAndamento: item.horasAndamento,
             registros: item.registros,
             tfms: item.tfmsSet.size
         }))
@@ -288,6 +410,7 @@ function consolidarDesempenho(registros) {
 
     return {
         totalHoras,
+        totalHorasAndamento,
         totalAtividades: registros.length,
         totalTfms: tfms.size,
         diasApontados,
@@ -367,54 +490,114 @@ function criarLinhaDesempenho(item, maiorIndicador) {
 function renderizarCalendarioDesempenho(timeline) {
     desempenhoCalendario.innerHTML = "";
     const registrosPorDia = new Map(timeline.map((item) => [item.data, item]));
-    const periodo = obterPeriodoCalendario(timeline);
-    const datas = criarDatasPeriodo(periodo.inicio, periodo.fim);
-    const diasCalendario = datas.length
-        ? datas.map((data) => registrosPorDia.get(data) || { data, horas: 0, registros: 0, tfms: 0 })
-        : timeline;
+    const datas = obterSemanaDaData(obterDataAncoraCalendario(timeline));
+    const diasCalendario = datas.map((data) => registrosPorDia.get(data) || { data, horas: 0, horasAndamento: 0, registros: 0, tfms: 0 });
     const maiorIndicador = Math.max(...diasCalendario.map((item) => obterValorIndicador(item)), 0);
     const diasComRegistro = diasCalendario.filter((item) => obterValorIndicador(item) > 0).length;
 
-    desempenhoCalendarioTotal.textContent = `${diasCalendario.length.toLocaleString("pt-BR")} dia(s) exibido(s)`;
-
-    if (!diasCalendario.length) {
-        const vazio = document.createElement("p");
-        vazio.className = "desempenho-mini-vazio";
-        vazio.textContent = "Sem datas para exibir no calendário.";
-        desempenhoCalendario.appendChild(vazio);
-        return;
-    }
+    desempenhoCalendarioTotal.textContent = `${formatarData(datas[0])} a ${formatarData(datas[6])}`;
 
     diasCalendario.forEach((item) => {
-        const dia = document.createElement("div");
+        const dia = document.createElement("button");
         const valor = obterValorIndicador(item);
+        const classeCarga = item.horas > 0
+            ? item.horas > 9
+                ? " desempenho-calendario-dia-acima"
+                : " desempenho-calendario-dia-adequado"
+            : "";
         const intensidade = maiorIndicador ? valor / maiorIndicador : 0;
         const opacidade = valor > 0 ? 0.14 + (intensidade * 0.46) : 0.04;
+        const selecionado = item.data === dataDesempenhoSelecionada;
 
-        dia.className = `desempenho-calendario-dia${valor > 0 ? "" : " desempenho-calendario-dia-vazio"}`;
+        dia.type = "button";
+        dia.className = `desempenho-calendario-dia${valor > 0 ? "" : " desempenho-calendario-dia-vazio"}${classeCarga}${item.horasAndamento > 0 ? " desempenho-calendario-dia-andamento" : ""}${selecionado ? " desempenho-calendario-dia-ativo" : ""}`;
         dia.style.setProperty("--opacidade", opacidade.toFixed(2));
+        dia.style.setProperty("--intensidade-alerta", obterIntensidadeCargaAlta(item.horas).toFixed(2));
+        dia.setAttribute("aria-pressed", String(selecionado));
+        dia.title = selecionado ? "Remover filtro desta data" : `Filtrar indicadores por ${formatarData(item.data)}`;
         dia.innerHTML = `
             <span>${obterDiaSemana(item.data)}</span>
             <strong>${formatarData(item.data).slice(0, 5)}</strong>
             <small>${valor > 0 ? formatarIndicador(valor) : "Sem registro"}</small>
+            ${item.horasAndamento > 0 ? `<em>Em andamento: ${formatarHoras(item.horasAndamento)}</em>` : ""}
         `;
+        dia.addEventListener("click", () => {
+            dataDesempenhoSelecionada = selecionado ? "" : item.data;
+            atualizarDesempenho();
+        });
         desempenhoCalendario.appendChild(dia);
     });
 
     if (diasComRegistro === 0) {
-        desempenhoCalendarioTotal.textContent = `${diasCalendario.length.toLocaleString("pt-BR")} dia(s), sem registros`;
+        desempenhoCalendarioTotal.textContent = `${formatarData(datas[0])} a ${formatarData(datas[6])} · sem registros`;
     }
 }
 
-function renderizarTfms(tfms) {
-    desempenhoTfmsLista.innerHTML = "";
-    desempenhoTfmsTotal.textContent = `${tfms.length.toLocaleString("pt-BR")} TFM(s)`;
+function alterarMesCalendario(deslocamento) {
+    const referencia = desempenhoMes.value ? criarDataLocal(`${desempenhoMes.value}-01`) : new Date();
+    referencia.setMonth(referencia.getMonth() + deslocamento);
+    desempenhoMes.value = formatarDataIso(referencia).slice(0, 7);
+    renderizarCalendarioMensal();
+}
+
+function renderizarCalendarioMensal() {
+    const timeline = consolidarDesempenho(filtrarRegistrosDesempenho(desempenhoRegistrosPlanilha)).timeline;
+    const registrosPorDia = new Map(timeline.map((item) => [item.data, item]));
+    const mesSelecionado = desempenhoMes.value || obterDataAncoraCalendario(timeline).slice(0, 7);
+    const [ano, mes] = mesSelecionado.split("-").map(Number);
+    const primeiroDia = new Date(ano, mes - 1, 1);
+    const ultimoDia = new Date(ano, mes, 0);
+    const espacosInicio = (primeiroDia.getDay() + 6) % 7;
+    const maiorIndicador = Math.max(...timeline
+        .filter((item) => item.data.startsWith(mesSelecionado))
+        .map((item) => obterValorIndicador(item)), 0);
+
+    desempenhoMes.value = mesSelecionado;
+    desempenhoCalendarioMensal.innerHTML = "";
+
+    for (let indice = 0; indice < espacosInicio; indice += 1) {
+        const espaco = document.createElement("span");
+        espaco.className = "desempenho-mensal-espaco";
+        desempenhoCalendarioMensal.appendChild(espaco);
+    }
+
+    for (let diaNumero = 1; diaNumero <= ultimoDia.getDate(); diaNumero += 1) {
+        const data = formatarDataIso(new Date(ano, mes - 1, diaNumero));
+        const item = registrosPorDia.get(data) || { data, horas: 0, horasAndamento: 0, registros: 0, tfms: 0 };
+        const valor = obterValorIndicador(item);
+        const classeCarga = item.horas > 0
+            ? item.horas > 9
+                ? " desempenho-mensal-dia-acima"
+                : " desempenho-mensal-dia-adequado"
+            : "";
+        const intensidade = maiorIndicador ? valor / maiorIndicador : 0;
+        const dia = document.createElement("button");
+
+        dia.type = "button";
+        dia.className = `desempenho-mensal-dia${valor > 0 ? " desempenho-mensal-dia-registro" : ""}${classeCarga}${item.horasAndamento > 0 ? " desempenho-mensal-dia-andamento" : ""}`;
+        dia.style.setProperty("--intensidade", (0.08 + intensidade * 0.42).toFixed(2));
+        dia.style.setProperty("--intensidade-alerta", obterIntensidadeCargaAlta(item.horas).toFixed(2));
+        dia.innerHTML = `<strong>${diaNumero}</strong><span>${valor > 0 ? formatarIndicador(valor) : "Sem registro"}</span><small>${item.horasAndamento > 0 ? `Em andamento: ${formatarHoras(item.horasAndamento)}` : `${item.registros} atividade(s)`}</small>`;
+        dia.title = `Abrir ${formatarData(data)} na visão geral`;
+        dia.addEventListener("click", () => {
+            dataDesempenhoSelecionada = data;
+            alterarVisaoDesempenho("geral");
+            atualizarDesempenho();
+            document.querySelector(".desempenho-resumo").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        desempenhoCalendarioMensal.appendChild(dia);
+    }
+}
+
+function renderizarTfms(tfms, lista = desempenhoTfmsLista, total = desempenhoTfmsTotal) {
+    lista.innerHTML = "";
+    total.textContent = `${tfms.length.toLocaleString("pt-BR")} TFM(s)`;
 
     if (!tfms.length) {
         const vazio = document.createElement("p");
         vazio.className = "desempenho-mini-vazio";
         vazio.textContent = "Nenhum TFM encontrado no período selecionado.";
-        desempenhoTfmsLista.appendChild(vazio);
+        lista.appendChild(vazio);
         return;
     }
 
@@ -456,17 +639,83 @@ function renderizarTfms(tfms) {
         }
 
         card.append(cabecalho, atividades);
-        desempenhoTfmsLista.appendChild(card);
+        lista.appendChild(card);
+    });
+}
+
+function renderizarVisoesDetalhadas() {
+    const registrosPeriodo = filtrarRegistrosDesempenho(desempenhoRegistrosPlanilha);
+    const termoTfm = normalizarBusca(desempenhoBuscaTfm.value);
+    const atividadeSelecionada = desempenhoBuscaAtividade.value;
+    const tfms = consolidarTfms(registrosPeriodo).filter((item) => {
+        const conteudo = [item.tfm, ...item.atividades.map((atividade) => atividade.nome)].join(" ");
+        return normalizarBusca(conteudo).includes(termoTfm);
+    });
+    const todasAtividades = consolidarDesempenho(registrosPeriodo).ranking;
+    const atividades = atividadeSelecionada
+        ? todasAtividades.filter((item) => item.atividade === atividadeSelecionada)
+        : todasAtividades;
+
+    const opcoesAtuais = [...desempenhoBuscaAtividade.options].slice(1).map((opcao) => opcao.value);
+    const novasOpcoes = todasAtividades.map((item) => item.atividade).sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
+
+    if (opcoesAtuais.join("\u0000") !== novasOpcoes.join("\u0000")) {
+        desempenhoBuscaAtividade.replaceChildren(new Option("Todas as atividades", ""));
+        novasOpcoes.forEach((atividade) => {
+            desempenhoBuscaAtividade.add(new Option(atividade, atividade));
+        });
+        desempenhoBuscaAtividade.value = novasOpcoes.includes(atividadeSelecionada) ? atividadeSelecionada : "";
+    }
+
+    renderizarTfms(tfms, desempenhoViewTfmsLista, desempenhoViewTfmsTotal);
+    desempenhoViewTfmsTotal.textContent = tfms.length.toLocaleString("pt-BR");
+    desempenhoViewAtividadesTotal.textContent = atividades.length.toLocaleString("pt-BR");
+    desempenhoViewAtividadesLista.innerHTML = "";
+
+    if (!atividades.length) {
+        desempenhoViewAtividadesLista.appendChild(criarTexto("p", "desempenho-mini-vazio", "Nenhuma atividade encontrada no período selecionado."));
+        return;
+    }
+
+    const larguraDisponivel = desempenhoViewAtividadesLista.clientWidth || document.documentElement.clientWidth;
+    const larguraMinimaColuna = larguraDisponivel < 600 ? 72 : 104;
+    const limiteVisivel = Math.max(3, Math.floor(larguraDisponivel / larguraMinimaColuna));
+    const atividadesVisiveis = atividades.slice(0, limiteVisivel);
+    const maiorHoras = Math.max(...atividadesVisiveis.map((item) => item.horas), 0);
+
+    desempenhoViewAtividadesLista.style.setProperty("--total-colunas", atividadesVisiveis.length);
+    atividadesVisiveis.forEach((item) => {
+        const coluna = document.createElement("article");
+        const valor = criarTexto("strong", "desempenho-coluna-valor", formatarHoras(item.horas));
+        const barraArea = document.createElement("div");
+        const barra = document.createElement("span");
+        const nome = criarTexto("span", "desempenho-coluna-nome", item.atividade);
+        const proporcao = maiorHoras ? Math.max(0.08, item.horas / maiorHoras) : 0;
+
+        coluna.className = "desempenho-coluna-item";
+        barraArea.className = "desempenho-coluna-area";
+        barra.className = "desempenho-coluna-barra";
+        barra.style.setProperty("--altura-coluna", `${(proporcao * 100).toFixed(2)}%`);
+        barraArea.appendChild(barra);
+        coluna.title = `${item.atividade}: ${formatarHoras(item.horas)}, ${item.registros} registro(s), ${item.tfms} TFM(s)`;
+        coluna.append(valor, barraArea, nome);
+        desempenhoViewAtividadesLista.appendChild(coluna);
     });
 }
 
 function atualizarDesempenho() {
-    const registrosFiltrados = filtrarRegistrosDesempenho(desempenhoRegistrosPlanilha);
-    const desempenho = consolidarDesempenho(registrosFiltrados);
-    const tfms = consolidarTfms(registrosFiltrados);
+    const registrosPeriodo = filtrarRegistrosDesempenho(desempenhoRegistrosPlanilha);
 
-    atualizarInfoPeriodoDesempenho(desempenhoRegistrosPlanilha.length, registrosFiltrados.length);
+    const registrosExibidos = dataDesempenhoSelecionada
+        ? registrosPeriodo.filter((registro) => obterDataRegistroDesempenho(registro) === dataDesempenhoSelecionada)
+        : registrosPeriodo;
+    const desempenhoPeriodo = consolidarDesempenho(registrosPeriodo);
+    const desempenho = consolidarDesempenho(registrosExibidos);
+    const tfms = consolidarTfms(registrosExibidos);
+
+    atualizarInfoPeriodoDesempenho(desempenhoRegistrosPlanilha.length, registrosPeriodo.length, registrosExibidos.length);
     desempenhoTotalHoras.textContent = formatarHoras(desempenho.totalHoras);
+    desempenhoHorasAndamento.textContent = formatarHoras(desempenho.totalHorasAndamento);
     desempenhoTotalAtividades.textContent = desempenho.totalAtividades.toLocaleString("pt-BR");
     desempenhoTotalTfms.textContent = desempenho.totalTfms.toLocaleString("pt-BR");
     desempenhoDiasApontados.textContent = desempenho.diasApontados.toLocaleString("pt-BR");
@@ -477,8 +726,8 @@ function atualizarDesempenho() {
     desempenhoVazio.textContent = desempenhoCarregando
         ? "Carregando todos os seus dados do banco de dados..."
         : desempenhoErro || "Nenhum registro encontrado no banco de dados para sua matrícula.";
-    desempenhoVazio.hidden = desempenho.ranking.length > 0 && !desempenhoCarregando && !desempenhoErro;
-    desempenhoDashboard.hidden = false;
+    desempenhoVazio.hidden = desempenho.ranking.length > 0;
+    desempenhoDashboard.hidden = visaoDesempenho !== "geral";
     desempenhoRankingSubtitulo.textContent = `Distribuição por ${obterNomeIndicador().toLowerCase()}`;
     desempenhoRankingTitulo.textContent = `Atividades por ${obterNomeIndicador().toLowerCase()}`;
 
@@ -487,8 +736,13 @@ function atualizarDesempenho() {
         desempenhoRanking.appendChild(criarLinhaDesempenho(item, maiorIndicador));
     });
 
-    renderizarCalendarioDesempenho(desempenho.timeline);
+    renderizarCalendarioDesempenho(desempenhoPeriodo.timeline);
     renderizarTfms(tfms);
+    renderizarVisoesDetalhadas();
+
+    if (visaoDesempenho === "calendario") {
+        renderizarCalendarioMensal();
+    }
 }
 
 async function carregarDesempenhoColaborador() {
@@ -504,12 +758,18 @@ async function carregarDesempenhoColaborador() {
         return;
     }
 
+    const registrosCache = obterCacheDesempenho(matricula);
+
+    if (registrosCache) {
+        desempenhoRegistrosPlanilha = registrosCache;
+    }
+
     desempenhoCarregando = true;
     desempenhoErro = "";
     atualizarDesempenho();
 
     const controleConsulta = new AbortController();
-    const timeoutConsulta = setTimeout(() => controleConsulta.abort(), 8000);
+    const timeoutConsulta = setTimeout(() => controleConsulta.abort(), 25000);
 
     try {
         const resposta = await fetch(`${SCRIPT_URL}?acao=desempenhoColaborador&matricula=${encodeURIComponent(matricula)}`, {
@@ -531,13 +791,19 @@ async function carregarDesempenhoColaborador() {
         }
 
         desempenhoRegistrosPlanilha = dados.registros.filter((item) => String(item.matricula || "").trim() === matricula);
+        salvarCacheDesempenho(matricula, desempenhoRegistrosPlanilha);
         desempenhoErro = "";
     } catch (erro) {
         if (requisicao === requisicaoAtual) {
-            desempenhoRegistrosPlanilha = [];
-            desempenhoErro = erro.name === "AbortError"
-                ? "A consulta ao banco demorou mais que o esperado. Tente atualizar novamente."
-                : "Não foi possível carregar o desempenho do banco de dados. Publique a versão atualizada do Apps Script e tente novamente.";
+            if (!registrosCache) {
+                desempenhoRegistrosPlanilha = [];
+            }
+
+            desempenhoErro = registrosCache
+                ? "Não foi possível atualizar agora. Os últimos dados disponíveis foram mantidos."
+                : erro.name === "AbortError"
+                    ? "A consulta ao banco demorou mais que o esperado. Tente atualizar novamente."
+                    : "Não foi possível carregar o desempenho do banco de dados. Publique a versão atualizada do Apps Script e tente novamente.";
             console.error(erro);
         }
     } finally {
@@ -547,6 +813,48 @@ async function carregarDesempenhoColaborador() {
         }
 
         clearTimeout(timeoutConsulta);
+    }
+}
+
+function renderizarTfmsAbertosDesempenho(tfms) {
+    const matricula = obterMatriculaDesempenho();
+    const relacionados = tfms.filter((item) => String(item.matriculaHost) === matricula || Number(item.minhasHoras || 0) > 0);
+    desempenhoAbertosLista.innerHTML = "";
+    desempenhoAbertosTotal.textContent = `${relacionados.length} aberto(s)`;
+    desempenhoAbertosStatus.hidden = relacionados.length > 0;
+    desempenhoAbertosStatus.textContent = "Nenhum TFM em andamento relacionado à sua matrícula.";
+
+    relacionados.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "desempenho-aberto-item";
+        card.innerHTML = `
+            <div>
+                <span><i class="bi bi-hourglass-split"></i> Em andamento</span>
+                <strong>TFM ${item.tfm}</strong>
+                <small>Início: ${formatarData(item.dataInicial)} · Host: ${item.nomeHost || "-"}</small>
+            </div>
+            <div><span>Minhas horas</span><strong>${formatarHoras(item.minhasHoras)}</strong></div>
+            <div><span>Total acumulado</span><strong>${formatarHoras(item.horasTotal)}</strong></div>
+        `;
+        desempenhoAbertosLista.appendChild(card);
+    });
+}
+
+async function carregarTfmsAbertosDesempenho() {
+    const matricula = obterMatriculaDesempenho();
+    if (!matricula) return;
+
+    desempenhoAbertosStatus.hidden = false;
+    desempenhoAbertosStatus.textContent = "Carregando TFMs em andamento...";
+
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=listarTfmsAbertos&matricula=${encodeURIComponent(matricula)}`);
+        const dados = await resposta.json();
+        if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Erro ao consultar TFMs em andamento.");
+        renderizarTfmsAbertosDesempenho(Array.isArray(dados.tfms) ? dados.tfms : []);
+    } catch (erro) {
+        desempenhoAbertosStatus.hidden = false;
+        desempenhoAbertosStatus.textContent = erro.message;
     }
 }
 
@@ -575,8 +883,12 @@ function aplicarAtalhoPeriodoDesempenho(periodo) {
 
 aplicarLoginSalvo();
 carregarDesempenhoColaborador();
+carregarTfmsAbertosDesempenho();
 
-btnAtualizarDesempenho.addEventListener("click", carregarDesempenhoColaborador);
+btnAtualizarDesempenho.addEventListener("click", () => {
+    carregarDesempenhoColaborador();
+    carregarTfmsAbertosDesempenho();
+});
 [desempenhoPeriodoInicio, desempenhoPeriodoFim].forEach((input) => {
     input.addEventListener("input", () => {
         desempenhoAtalhos.forEach((botao) => botao.classList.remove("desempenho-atalho-ativo"));
@@ -593,11 +905,24 @@ desempenhoAtalhos.forEach((botao) => {
 });
 
 modoDesempenhoBotoes.forEach((botao) => {
-    botao.addEventListener("click", () => {
-        modoDesempenho = botao.dataset.modoDesempenho;
-        modoDesempenhoBotoes.forEach((item) => {
-            item.classList.toggle("oficina-modo-ativo", item === botao);
-        });
-        atualizarDesempenho();
-    });
+    botao.addEventListener("click", () => atualizarModoDesempenho(botao.dataset.modoDesempenho));
+});
+
+modoDesempenhoLateralBotoes.forEach((botao) => {
+    botao.addEventListener("click", () => atualizarModoDesempenho(botao.dataset.desempenhoModoLateral));
+});
+
+desempenhoNavegacaoBotoes.forEach((botao) => {
+    botao.addEventListener("click", () => alterarVisaoDesempenho(botao.dataset.desempenhoView));
+});
+
+desempenhoMes.addEventListener("change", renderizarCalendarioMensal);
+desempenhoMesAnterior.addEventListener("click", () => alterarMesCalendario(-1));
+desempenhoMesSeguinte.addEventListener("click", () => alterarMesCalendario(1));
+desempenhoBuscaTfm.addEventListener("input", renderizarVisoesDetalhadas);
+desempenhoBuscaAtividade.addEventListener("input", renderizarVisoesDetalhadas);
+window.addEventListener("resize", () => {
+    if (visaoDesempenho === "atividades") {
+        renderizarVisoesDetalhadas();
+    }
 });

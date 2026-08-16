@@ -1,4 +1,4 @@
-const atividadesDisponiveis = [
+const atividadesDisponiveisLegado = [
     "Troca de motor N4/ N3 em veículo",
     "Troca de motor Diesel 2.2 KP1",
     "Troca de motor Diesel 2.2 Comander / Toro / RampageAC",
@@ -77,8 +77,12 @@ const atividadesDisponiveis = [
     "Desmontagem de motor e preparação de componentes para controle dimensional realizado pela metrologia.",
     "Descarte de peças.",
     "Troca Óleo Motor.",
-    "Teste de funcionamento dos injetores vazão e pressão"
+    "Teste de funcionamento dos injetores vazão e pressão",
+    "Retirada de bateria H.V"
 ];
+const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
+    ? window.ATIVIDADES_DISPONIVEIS
+    : atividadesDisponiveisLegado;
 
 const btnAdd = document.querySelector(".btn-add");
 const btnSalvar = document.querySelector(".btn-salvar");
@@ -170,6 +174,24 @@ const revisaoConteudo = document.getElementById("revisao-conteudo");
 const revisaoSalvamentoStatus = document.getElementById("revisao-salvamento-status");
 const colaboradoresAdicionaisLista = document.getElementById("colaboradores-adicionais-lista");
 const btnAddColaborador = document.querySelector(".btn-add-colaborador");
+const formAbrirTfm = document.getElementById("form-abrir-tfm");
+const abertoDataInicial = document.getElementById("aberto-data-inicial");
+const abertoTurno = document.getElementById("aberto-turno");
+const abertoTfm = document.getElementById("aberto-tfm");
+const abertoProjeto = document.getElementById("aberto-projeto");
+const abertoFeedback = document.getElementById("aberto-feedback");
+const tfmsAbertosStatus = document.getElementById("tfms-abertos-status");
+const tfmsAbertosLista = document.getElementById("tfms-abertos-lista");
+const btnAtualizarTfmsAbertos = document.getElementById("btn-atualizar-tfms-abertos");
+const formHorasTfmAberto = document.getElementById("form-horas-tfm-aberto");
+const horasTfmNumero = document.getElementById("horas-tfm-numero");
+const horasTfmId = document.getElementById("horas-tfm-id");
+const horasTfmData = document.getElementById("horas-tfm-data");
+const horasTfmQuantidade = document.getElementById("horas-tfm-quantidade");
+const horasTfmAtividade = document.getElementById("horas-tfm-atividade");
+const horasTfmObservacao = document.getElementById("horas-tfm-observacao");
+const horasTfmFeedback = document.getElementById("horas-tfm-feedback");
+const btnFecharFormHoras = document.getElementById("btn-fechar-form-horas");
 const LOGIN_CHAVE = "stellantisUsuarioLogado";
 const HISTORICO_CHAVE = "stellantisHistoricoApontamentos";
 const LIMITE_HISTORICO = 60;
@@ -207,6 +229,7 @@ let salvamentoIntervalo = null;
 let consultaTfmIntervalo = null;
 const cacheConsultaTfms = new Map();
 let buscaEmLoteDisponivel = true;
+let tfmsAbertosCarregados = [];
 const colaboradores = [
     { matricula: "87033", nome: "Leonel Barros Pereira Da Silva" },
     { matricula: "61449", nome: "Ailton Dos Reis Santana" },
@@ -220,7 +243,7 @@ const colaboradores = [
     { matricula: "61604", nome: "Edilson Ribeiro de Andrade" },
     { matricula: "81531", nome: "Fabio Henrique Alves Ventura" },
     { matricula: "61134", nome: "Franklin de Jesus Souza" },
-    { matricula: "70980", nome: "Geraldo Marçal Paiva" },
+    { matricula: "70980", nome: "Geraldo Marçal Da Silva" },
     { matricula: "60738", nome: "Gustavo da Silva Amaral" },
     { matricula: "62011", nome: "João Paulo de Rezende Trindade" },
     { matricula: "83661", nome: "José Edson Martins Coelho" },
@@ -1694,6 +1717,178 @@ function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
 }
 
+function mostrarFeedbackPainel(elemento, mensagem, tipo = "sucesso") {
+    elemento.hidden = false;
+    elemento.className = `feedback-global ${tipo}`;
+    elemento.textContent = mensagem;
+}
+
+async function enviarAcaoTfmAberto(dados) {
+    const resposta = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(dados)
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok || !resultado.sucesso) {
+        throw new Error(resultado.erro || "Não foi possível concluir a operação.");
+    }
+
+    return resultado;
+}
+
+async function abrirNovoTfm(event) {
+    event.preventDefault();
+    const tfm = abertoTfm.value.trim();
+
+    if (!/^\d{6}$/.test(tfm) || !abertoDataInicial.value || !abertoTurno.value) {
+        mostrarFeedbackPainel(abertoFeedback, "Preencha data inicial, turno e um TFM com 6 números.", "erro");
+        return;
+    }
+
+    const botao = formAbrirTfm.querySelector("button[type='submit']");
+    botao.disabled = true;
+
+    try {
+        await enviarAcaoTfmAberto({
+            acao: "abrirTfm",
+            tfm,
+            dataInicial: abertoDataInicial.value,
+            turno: abertoTurno.value,
+            projeto: abertoProjeto.value.trim(),
+            nomeHost: usuarioAtual.nome,
+            matriculaHost: usuarioAtual.matricula
+        });
+        formAbrirTfm.reset();
+        abertoDataInicial.value = new Date().toISOString().slice(0, 10);
+        mostrarFeedbackPainel(abertoFeedback, `TFM ${tfm} aberto com sucesso.`, "sucesso");
+        await carregarTfmsAbertos();
+        alternarAppTab("abrir-tfm");
+        alternarTfmAbertoView("andamento");
+    } catch (erro) {
+        mostrarFeedbackPainel(abertoFeedback, erro.message, "erro");
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+function abrirFormularioHoras(tfm) {
+    formHorasTfmAberto.hidden = false;
+    horasTfmId.value = tfm;
+    horasTfmNumero.textContent = tfm;
+    horasTfmData.value = new Date().toISOString().slice(0, 10);
+    horasTfmQuantidade.value = "";
+    horasTfmAtividade.value = "";
+    horasTfmObservacao.value = "";
+    horasTfmFeedback.hidden = true;
+    formHorasTfmAberto.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderizarTfmsAbertos(tfms) {
+    tfmsAbertosLista.innerHTML = "";
+    tfmsAbertosStatus.hidden = tfms.length > 0;
+    tfmsAbertosStatus.textContent = "Nenhum TFM em andamento no momento.";
+
+    tfms.forEach((item) => {
+        const hostAtual = String(item.matriculaHost) === String(usuarioAtual?.matricula);
+        const card = document.createElement("article");
+        card.className = "tfm-aberto-card";
+        card.innerHTML = `
+            <div class="tfm-aberto-card-topo">
+                <div>
+                    <span class="tfm-aberto-status"><i class="bi bi-hourglass-split"></i> Em andamento</span>
+                    <h2>TFM ${item.tfm}</h2>
+                    <p>${formatarValor(item.projeto)} · Host: ${formatarValor(item.nomeHost)}</p>
+                </div>
+                <div class="tfm-aberto-total"><span>Horas acumuladas</span><strong>${formatarHoras(item.horasTotal)}</strong></div>
+            </div>
+            <div class="tfm-aberto-metricas">
+                <div><span>Início</span><strong>${formatarData(item.dataInicial)}</strong></div>
+                <div><span>Minhas horas</span><strong>${formatarHoras(item.minhasHoras)}</strong></div>
+                <div><span>Lançamentos</span><strong>${item.lancamentos}</strong></div>
+                <div><span>Último dia</span><strong>${item.ultimoLancamento ? formatarData(item.ultimoLancamento) : "Sem lançamento"}</strong></div>
+            </div>
+            <div class="tfm-aberto-acoes">
+                <button type="button" class="btn-adicionar-horas" data-adicionar-horas="${item.tfm}">
+                    <i class="bi bi-plus-circle"></i><span>Adicionar minhas horas</span>
+                </button>
+                ${hostAtual ? `<button type="button" class="btn-finalizar-tfm" data-finalizar-tfm="${item.tfm}"><i class="bi bi-check2-circle"></i><span>Finalizar TFM</span></button>` : ""}
+            </div>
+        `;
+        tfmsAbertosLista.appendChild(card);
+    });
+}
+
+async function carregarTfmsAbertos() {
+    if (!usuarioAtual?.matricula) return;
+
+    tfmsAbertosStatus.hidden = false;
+    tfmsAbertosStatus.textContent = "Carregando TFMs em andamento...";
+    tfmsAbertosLista.innerHTML = "";
+
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=listarTfmsAbertos&matricula=${encodeURIComponent(usuarioAtual.matricula)}`);
+        const dados = await resposta.json();
+        if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Erro ao carregar TFMs em andamento.");
+        tfmsAbertosCarregados = Array.isArray(dados.tfms) ? dados.tfms : [];
+        renderizarTfmsAbertos(tfmsAbertosCarregados);
+    } catch (erro) {
+        tfmsAbertosStatus.hidden = false;
+        tfmsAbertosStatus.textContent = erro.message;
+    }
+}
+
+async function adicionarHorasAoTfm(event) {
+    event.preventDefault();
+    const horas = converterHorasNumero(horasTfmQuantidade.value);
+
+    if (!horasTfmData.value || !horasTfmAtividade.value.trim() || horas <= 0) {
+        mostrarFeedbackPainel(horasTfmFeedback, "Preencha o dia, a atividade e as horas trabalhadas.", "erro");
+        return;
+    }
+
+    const botao = formHorasTfmAberto.querySelector("button[type='submit']");
+    botao.disabled = true;
+    try {
+        await enviarAcaoTfmAberto({
+            acao: "adicionarHorasTfmAberto",
+            tfm: horasTfmId.value,
+            dataTrabalhada: horasTfmData.value,
+            atividade: horasTfmAtividade.value.trim(),
+            horas,
+            observacao: horasTfmObservacao.value.trim(),
+            nomeColaborador: usuarioAtual.nome,
+            matriculaColaborador: usuarioAtual.matricula
+        });
+        await carregarTfmsAbertos();
+        formHorasTfmAberto.hidden = true;
+        mostrarFeedback("Horas adicionadas ao TFM em andamento.", "sucesso");
+    } catch (erro) {
+        mostrarFeedbackPainel(horasTfmFeedback, erro.message, "erro");
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+async function finalizarTfmAberto(tfm) {
+    if (!window.confirm(`Finalizar o TFM ${tfm} e enviar todos os lançamentos para a planilha do BI? Esta ação é definitiva.`)) return;
+
+    try {
+        const resultado = await enviarAcaoTfmAberto({
+            acao: "fecharTfmAberto",
+            tfm,
+            dataFinal: new Date().toISOString().slice(0, 10),
+            matriculaHost: usuarioAtual.matricula
+        });
+        mostrarFeedback(`TFM ${tfm} finalizado. ${resultado.linhasTransferidas} lançamento(s) enviado(s) ao BI.`, "sucesso");
+        await carregarTfmsAbertos();
+        await carregarDesempenhoColaborador();
+    } catch (erro) {
+        mostrarFeedback(erro.message, "erro");
+    }
+}
+
 function obterMatriculaDesempenho() {
     return String(usuarioAtual?.matricula || matriculaInput?.value || "").trim();
 }
@@ -2365,13 +2560,24 @@ function criarResultadoTfm(dados) {
         cabecalho.appendChild(linksContainer);
     }
 
-    if (usuarioAtual) {
+    const matriculaHost = String(dados.matricula || "").trim();
+    const matriculaLogada = String(usuarioAtual?.matricula || "").trim();
+
+    if (matriculaLogada && matriculaLogada === matriculaHost) {
         const botaoEditar = document.createElement("button");
         botaoEditar.type = "button";
         botaoEditar.className = "btn-carregar-tfm";
         botaoEditar.innerHTML = `<i class="bi bi-pencil-square"></i> Editar no formulário`;
         botaoEditar.addEventListener("click", () => carregarTfmNoFormulario(dados));
         cabecalho.appendChild(botaoEditar);
+    } else if (usuarioAtual && matriculaHost) {
+        const avisoEdicao = document.createElement("div");
+        avisoEdicao.className = "aviso-edicao-host";
+        avisoEdicao.innerHTML = `
+            <i class="bi bi-lock"></i>
+            <span>Entre na conta do responsável por este TFM para editá-lo.</span>
+        `;
+        cabecalho.appendChild(avisoEdicao);
     }
 
     const resumo = document.createElement("div");
@@ -2601,6 +2807,14 @@ async function registrarCadastroPendente(colaborador) {
 }
 
 function carregarTfmNoFormulario(dados) {
+    const matriculaHost = String(dados.matricula || "").trim();
+    const matriculaLogada = String(usuarioAtual?.matricula || "").trim();
+
+    if (!matriculaLogada || matriculaLogada !== matriculaHost) {
+        mostrarFeedback("Entre na conta do responsável por este TFM para editá-lo.", "erro");
+        return;
+    }
+
     const dataInicio = normalizarDataInput(dados.dataInicioTfm || dados.data);
     const dataFim = normalizarDataInput(dados.dataFimTfm || dados.dataInicioTfm || dados.data);
 
@@ -2775,7 +2989,8 @@ async function prepararDadosApontamento() {
                 observacao: atividade.observacao
             }))
         )),
-        linhaEditando: linhaEditando
+        linhaEditando: linhaEditando,
+        matriculaUsuarioEditor: String(usuarioAtual?.matricula || "").trim()
     };
 }
 
@@ -2878,7 +3093,22 @@ configurarAutocomplete(modalAtividadeInput, atividadesDisponiveis);
 configurarAutocomplete(modalColaboradorNomeInput, colaboradoresDisponiveis, atualizarMatriculaModalColaborador, atualizarMatriculaModalColaborador);
 document.querySelectorAll(".colaborador-input").forEach((input) => configurarAutocomplete(input, colaboradoresDisponiveis, atualizarMatriculaPorNome, atualizarMatriculaPorNome));
 configurarAutocomplete(loginNomeInput, colaboradoresDisponiveis, atualizarMatriculaLoginPorNome, atualizarMatriculaLoginPorNome);
+configurarAutocomplete(horasTfmAtividade, atividadesDisponiveis);
 document.querySelectorAll(".documento-input").forEach(configurarDocumento);
+
+function alternarTfmAbertoView(view) {
+    document.querySelectorAll("[data-tfm-aberto-view]").forEach((botao) => {
+        botao.classList.toggle("tfm-aberto-nav-btn-ativo", botao.dataset.tfmAbertoView === view);
+    });
+
+    document.querySelectorAll("[data-tfm-aberto-panel]").forEach((painel) => {
+        painel.hidden = painel.dataset.tfmAbertoPanel !== view;
+    });
+
+    if (view === "andamento") {
+        carregarTfmsAbertos();
+    }
+}
 
 function alternarAppTab(aba) {
     document.querySelectorAll(".app-nav-btn").forEach((item) => {
@@ -2897,6 +3127,14 @@ function alternarAppTab(aba) {
 
     if (aba === "geral-oficina") {
         carregarGeralOficina();
+    }
+
+    if (aba === "abrir-tfm" && abertoDataInicial && !abertoDataInicial.value) {
+        abertoDataInicial.value = new Date().toISOString().slice(0, 10);
+    }
+
+    if (aba === "abrir-tfm") {
+        alternarTfmAbertoView("dados");
     }
 }
 
@@ -2927,6 +3165,10 @@ document.querySelectorAll(".app-nav-btn[data-app-tab]").forEach((botao) => {
     botao.addEventListener("click", () => {
         alternarAppTab(botao.dataset.appTab);
     });
+});
+
+document.querySelectorAll("[data-tfm-aberto-view]").forEach((botao) => {
+    botao.addEventListener("click", () => alternarTfmAbertoView(botao.dataset.tfmAbertoView));
 });
 
 [desempenhoPeriodoInicio, desempenhoPeriodoFim].forEach((input) => {
@@ -2995,6 +3237,24 @@ modalHorasInput.addEventListener("input", () => {
 });
 
 btnBuscar.addEventListener("click", buscarDocumentoTfm);
+formAbrirTfm?.addEventListener("submit", abrirNovoTfm);
+formHorasTfmAberto?.addEventListener("submit", adicionarHorasAoTfm);
+btnAtualizarTfmsAbertos?.addEventListener("click", carregarTfmsAbertos);
+btnFecharFormHoras?.addEventListener("click", () => {
+    formHorasTfmAberto.hidden = true;
+});
+tfmsAbertosLista?.addEventListener("click", (event) => {
+    const botaoHoras = event.target.closest("[data-adicionar-horas]");
+    const botaoFinalizar = event.target.closest("[data-finalizar-tfm]");
+
+    if (botaoHoras) {
+        abrirFormularioHoras(botaoHoras.dataset.adicionarHoras);
+    }
+
+    if (botaoFinalizar) {
+        finalizarTfmAberto(botaoFinalizar.dataset.finalizarTfm);
+    }
+});
 resultadoBuscaBackdrop.addEventListener("click", limparResultadoBusca);
 btnAbrirSugestao?.addEventListener("click", abrirModalSugestao);
 btnAbrirFeedback?.addEventListener("click", abrirModalFeedback);
@@ -3133,6 +3393,14 @@ document.addEventListener("input", (event) => {
 
     if (event.target.matches("#tfm")) {
         limitarParaNumeros(event.target, 6);
+    }
+
+    if (event.target.matches("#aberto-tfm")) {
+        limitarParaNumeros(event.target, 6);
+    }
+
+    if (event.target.matches("#horas-tfm-quantidade")) {
+        aplicarSeparadorDecimalPonto(event.target);
     }
 
     if (event.target.matches("#login-matricula")) {

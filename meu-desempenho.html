@@ -11,6 +11,7 @@
     <link rel="manifest" href="site.webmanifest">
     <link rel="stylesheet" href="geral-oficina.css">
     <link rel="stylesheet" href="meu-desempenho.css">
+    <link rel="stylesheet" href="site-help.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
@@ -36,8 +37,33 @@
         </div>
     </header>
 
+    <nav class="desempenho-navegacao" aria-label="Navegação do meu desempenho">
+        <span>Meu desempenho</span>
+        <button type="button" class="desempenho-nav-ativo" data-desempenho-view="geral">
+            <i class="bi bi-grid-1x2"></i>
+            <span>Visão geral</span>
+        </button>
+        <button type="button" data-desempenho-view="calendario">
+            <i class="bi bi-calendar3"></i>
+            <span>Calendário</span>
+        </button>
+        <button type="button" data-desempenho-view="tfms">
+            <i class="bi bi-wrench-adjustable-circle"></i>
+            <span>TFMs</span>
+        </button>
+        <button type="button" data-desempenho-view="atividades">
+            <i class="bi bi-list-check"></i>
+            <span>Atividades</span>
+        </button>
+        <span class="desempenho-navegacao-secao">Indicador</span>
+        <div class="desempenho-navegacao-modo" aria-label="Indicador dos dados do desempenho">
+            <button type="button" class="desempenho-modo-ativo" data-desempenho-modo-lateral="horas">Horas</button>
+            <button type="button" data-desempenho-modo-lateral="tfms">TFM</button>
+        </div>
+    </nav>
+
     <main class="oficina-app desempenho-app">
-        <section class="oficina-hero desempenho-hero" aria-labelledby="meu-desempenho-titulo">
+        <section class="oficina-hero desempenho-hero" data-desempenho-view-content="geral" aria-labelledby="meu-desempenho-titulo">
             <div>
                 <span>Indicadores individuais</span>
                 <h1 id="meu-desempenho-titulo">Meu Desempenho</h1>
@@ -57,7 +83,7 @@
             </div>
         </section>
 
-        <section class="desempenho-identidade" aria-label="Colaborador consultado">
+        <section class="desempenho-identidade" data-desempenho-view-content="geral" aria-label="Colaborador consultado">
             <div>
                 <span>Colaborador</span>
                 <strong id="desempenho-colaborador-nome">-</strong>
@@ -68,7 +94,7 @@
             </div>
         </section>
 
-        <section class="desempenho-filtros-pagina" aria-label="Filtro de período do desempenho">
+        <section class="desempenho-filtros-pagina" data-desempenho-view-content="geral" aria-label="Filtro de período do desempenho">
             <div class="desempenho-filtros-cabecalho">
                 <span>Período de análise</span>
                 <strong>Selecione as datas para atualizar calendário e indicadores</strong>
@@ -91,12 +117,16 @@
             </div>
         </section>
 
-        <p id="desempenho-periodo-info" class="oficina-status">Carregando seus registros do banco de dados...</p>
+        <p id="desempenho-periodo-info" class="oficina-status" data-desempenho-view-content="geral">Carregando seus registros do banco de dados...</p>
 
-        <section class="oficina-resumo desempenho-resumo" aria-label="Resumo do meu desempenho">
+        <section class="oficina-resumo desempenho-resumo" data-desempenho-view-content="geral" aria-label="Resumo do meu desempenho">
             <article>
                 <span>Horas trabalhadas</span>
                 <strong id="desempenho-total-horas">0h</strong>
+            </article>
+            <article>
+                <span>Horas em andamento</span>
+                <strong id="desempenho-horas-andamento">0h</strong>
             </article>
             <article>
                 <span>Atividades salvas</span>
@@ -120,12 +150,24 @@
             </article>
         </section>
 
-        <section id="desempenho-dashboard" class="desempenho-dashboard" hidden>
+        <section class="grafico-card desempenho-abertos-card" data-desempenho-view-content="geral" aria-labelledby="desempenho-abertos-titulo">
+            <div class="grafico-card-topo desempenho-card-topo">
+                <div>
+                    <span>Trabalhos ainda não enviados ao Banco de Dados</span>
+                    <h2 id="desempenho-abertos-titulo">TFMs em andamento</h2>
+                </div>
+                <strong id="desempenho-abertos-total">0 aberto(s)</strong>
+            </div>
+            <p id="desempenho-abertos-status" class="desempenho-vazio">Carregando TFMs em andamento...</p>
+            <div id="desempenho-abertos-lista" class="desempenho-abertos-lista"></div>
+        </section>
+
+        <section id="desempenho-dashboard" class="desempenho-dashboard" data-desempenho-view-content="geral" hidden>
             <section class="grafico-card desempenho-calendario-card" aria-labelledby="desempenho-calendario-titulo">
                 <div class="grafico-card-topo desempenho-card-topo">
                     <div>
-                        <span>Intensidade por data</span>
-                        <h2 id="desempenho-calendario-titulo">Calendário de registros</h2>
+                        <span>Semana selecionada</span>
+                        <h2 id="desempenho-calendario-titulo">Registros da semana</h2>
                     </div>
                     <strong id="desempenho-calendario-total">0 dias</strong>
                 </div>
@@ -157,9 +199,78 @@
                 <div id="desempenho-tfms-lista" class="desempenho-tfms-lista" aria-label="Lista de TFMs realizados no período"></div>
             </section>
         </section>
+
+        <section class="desempenho-mensal" data-desempenho-view-content="calendario" hidden aria-labelledby="desempenho-mensal-titulo">
+            <div class="desempenho-mensal-topo">
+                <div>
+                    <span>Visão mensal</span>
+                    <h1 id="desempenho-mensal-titulo">Calendário de registros</h1>
+                    <p>Selecione um dia para abrir seus indicadores na visão geral.</p>
+                </div>
+
+                <div class="desempenho-mes-segmentador" aria-label="Selecionar mês do calendário">
+                    <button type="button" id="desempenho-mes-anterior" title="Mês anterior" aria-label="Mês anterior">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <label>
+                        <span>Mês de análise</span>
+                        <input id="desempenho-mes" type="month">
+                    </label>
+                    <button type="button" id="desempenho-mes-seguinte" title="Próximo mês" aria-label="Próximo mês">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="desempenho-mensal-semana" aria-hidden="true">
+                <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
+            </div>
+            <div id="desempenho-calendario-mensal" class="desempenho-calendario-mensal" aria-label="Calendário mensal interativo"></div>
+        </section>
+
+        <section class="desempenho-dados-view" data-desempenho-view-content="tfms" hidden aria-labelledby="desempenho-view-tfms-titulo">
+            <div class="desempenho-dados-topo">
+                <div>
+                    <span>Detalhamento individual</span>
+                    <h1 id="desempenho-view-tfms-titulo">Meus TFMs</h1>
+                    <p>Todos os TFMs realizados no período selecionado, com horas e atividades relacionadas.</p>
+                </div>
+                <label class="desempenho-busca">
+                    <i class="bi bi-search"></i>
+                    <input id="desempenho-busca-tfm" type="search" placeholder="Buscar número ou atividade" aria-label="Buscar TFM">
+                </label>
+            </div>
+            <div class="desempenho-dados-resumo">
+                <span>TFMs encontrados</span>
+                <strong id="desempenho-view-tfms-total">0</strong>
+            </div>
+            <div id="desempenho-view-tfms-lista" class="desempenho-tfms-lista desempenho-view-lista" aria-live="polite"></div>
+        </section>
+
+        <section class="desempenho-dados-view" data-desempenho-view-content="atividades" hidden aria-labelledby="desempenho-view-atividades-titulo">
+            <div class="desempenho-dados-topo">
+                <div>
+                    <span>Detalhamento individual</span>
+                    <h1 id="desempenho-view-atividades-titulo">Minhas atividades</h1>
+                    <p>Cada atividade realizada no período, consolidada por horas, registros e TFMs.</p>
+                </div>
+                <label class="desempenho-busca desempenho-seletor-atividade">
+                    <i class="bi bi-list-check"></i>
+                    <select id="desempenho-busca-atividade" aria-label="Selecionar atividade">
+                        <option value="">Todas as atividades</option>
+                    </select>
+                </label>
+            </div>
+            <div class="desempenho-dados-resumo">
+                <span>Atividades encontradas</span>
+                <strong id="desempenho-view-atividades-total">0</strong>
+            </div>
+            <div id="desempenho-view-atividades-lista" class="desempenho-atividades-detalhadas" aria-live="polite"></div>
+        </section>
     </main>
 
     <script src="meu-desempenho.js"></script>
+    <script src="site-help.js"></script>
 </body>
 
 </html>

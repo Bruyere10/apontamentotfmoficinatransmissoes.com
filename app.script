@@ -1,6 +1,7 @@
 const CONFIG = {
   planilhaId: "1B_ER15kHjnoiRcVNeVL6UVsbD-6tttgiKr4Ph22SHeo",
   nomeAba: "Página1",
+  nomeAbaTfmsAbertos: "TFMs Abertos",
   nomeAbaDadosComplementares: "Dados Complementares",
   emailAnexosDestino: "SG49872@stellantis.com",
   assuntoEmailAnexos: "ANEXO_APONTAMENTO_TFM",
@@ -33,6 +34,28 @@ const CABECALHOS_DADOS_COMPLEMENTARES = [
   "MATRÍCULA DO COLABORADOR"
 ];
 
+const CABECALHOS_TFMS_ABERTOS = [
+  "STATUS",
+  "TFM",
+  "DATA INICIAL",
+  "DATA TRABALHADA",
+  "DATA FINAL",
+  "NOME DO HOST",
+  "MATRÍCULA DO HOST",
+  "NOME DO COLABORADOR",
+  "MATRÍCULA DO COLABORADOR",
+  "TURNO",
+  "PROJETO",
+  "ATIVIDADE",
+  "HORAS",
+  "OBSERVAÇÃO",
+  "REGISTRADO EM",
+  "NOME DO PDF",
+  "LINK DO PDF",
+  "ATIVIDADE ADICIONAL",
+  "HORAS ADICIONAIS"
+];
+
 function autorizarEnvioEmail() {
   MailApp.sendEmail({
     to: CONFIG.emailAnexosDestino,
@@ -57,7 +80,32 @@ function doPost(evento) {
       return salvarCadastroPendente(dados);
     }
 
+    if (dados.acao === "abrirTfm") {
+      return abrirTfmEmAndamento(dados);
+    }
+
+    if (dados.acao === "adicionarHorasTfmAberto") {
+      return adicionarHorasTfmAberto(dados);
+    }
+
+    if (dados.acao === "editarLancamentosTfmAberto") {
+      return editarLancamentosTfmAberto(dados);
+    }
+
+    if (dados.acao === "cancelarTfmAberto") {
+      return cancelarTfmAberto(dados);
+    }
+
+    if (dados.acao === "fecharTfmAberto") {
+      return fecharTfmAberto(dados);
+    }
+
     const planilha = obterAbaPrincipal();
+
+    if (dados.linhaEditando && Number.isInteger(dados.linhaEditando) && dados.linhaEditando > 1) {
+      validarResponsavelEdicao(planilha, dados);
+    }
+
     const documentos = enviarDocumentosPorEmail(dados);
     const nomesDocumentos = documentos.map((documento) => documento.nome).join(" | ");
     const linksDocumentos = [...new Set(documentos.map((documento) => documento.url).filter(Boolean))].join(" | ");
@@ -95,28 +143,91 @@ function doPost(evento) {
       }))
     ));
 
-    // Se está editando, deleta TODAS as linhas do TFM antes de adicionar as novas
+    // Em edicoes, preserva as linhas existentes e altera somente as celulas modificadas.
     if (dados.linhaEditando && Number.isInteger(dados.linhaEditando) && dados.linhaEditando > 1) {
       const colunaTfm = obterIndiceCabecalho(cabecalhosPlanilha, ["TFM", "Numero do TFM", "Número do TFM"]);
       const tfmEditando = String(dados.tfm || "").trim();
-      
-      if (colunaTfm >= 0 && tfmEditando) {
-        // Encontra e deleta TODAS as linhas deste TFM
-        const todosOsDados = planilha.getDataRange().getValues();
-        for (let i = todosOsDados.length - 1; i >= 1; i--) {
-          const tfmLinha = String(todosOsDados[i][colunaTfm] || "").trim();
-          if (tfmLinha === tfmEditando) {
-            planilha.deleteRow(i + 1);
-          }
+
+      if (colunaTfm < 0 || !tfmEditando) {
+        throw new Error("Nao foi possivel identificar as linhas do TFM para edicao.");
+      }
+
+      const todosOsDados = planilha.getDataRange().getValues();
+      const linhasExistentes = [];
+
+      for (let indice = 1; indice < todosOsDados.length; indice += 1) {
+        if (String(todosOsDados[indice][colunaTfm] || "").trim() === tfmEditando) {
+          linhasExistentes.push({ numero: indice + 1, valores: todosOsDados[indice] });
         }
       }
-      
-      // Adiciona as novas linhas no final
-      planilha.getRange(planilha.getLastRow() + 1, 1, linhas.length, cabecalhosPlanilha.length).setValues(linhas);
+
+      if (linhasExistentes.length === 0) {
+        throw new Error("Nenhuma linha existente foi encontrada para este TFM.");
+      }
+
+      const preservarDocumentos = documentos.length === 0;
+      const colunaData = obterIndiceCabecalho(cabecalhosPlanilha, ["Data"]);
+      const colunaMatricula = obterIndiceCabecalho(cabecalhosPlanilha, ["Matricula", "Matrícula"]);
+      const colunaAtividade = obterIndiceCabecalho(cabecalhosPlanilha, ["Atividade", "Atividade Realizada"]);
+      const colunasDocumento = new Set([
+        obterIndiceCabecalho(cabecalhosPlanilha, ["Nome do PDF", "PDF", "Nome Documento", "Nome do Documento"]),
+        obterIndiceCabecalho(cabecalhosPlanilha, ["Link do PDF", "Link PDF", "URL do PDF", "Documento", "Link do Documento"])
+      ].filter((indice) => indice >= 0));
+      const linhasUsadas = new Set();
+
+      function localizarLinhaExistente(novaLinha, indicePreferencial) {
+        const criterios = [
+          [colunaData, colunaMatricula, colunaAtividade],
+          [colunaMatricula, colunaAtividade],
+          [colunaMatricula]
+        ].filter((colunas) => colunas.every((coluna) => coluna >= 0));
+
+        for (const colunas of criterios) {
+          const indiceEncontrado = linhasExistentes.findIndex((linhaExistente, indiceLinha) => (
+            !linhasUsadas.has(indiceLinha)
+            && colunas.every((coluna) => valoresPlanilhaIguais(linhaExistente.valores[coluna], novaLinha[coluna]))
+          ));
+
+          if (indiceEncontrado >= 0) {
+            return indiceEncontrado;
+          }
+        }
+
+        if (indicePreferencial < linhasExistentes.length && !linhasUsadas.has(indicePreferencial)) {
+          return indicePreferencial;
+        }
+
+        return linhasExistentes.findIndex((linhaExistente, indiceLinha) => !linhasUsadas.has(indiceLinha));
+      }
+
+      linhas.forEach((novaLinha, indiceNovaLinha) => {
+        const indiceLinhaExistente = localizarLinhaExistente(novaLinha, indiceNovaLinha);
+
+        if (indiceLinhaExistente < 0) {
+          return;
+        }
+
+        linhasUsadas.add(indiceLinhaExistente);
+        const linhaExistente = linhasExistentes[indiceLinhaExistente];
+
+        novaLinha.forEach((novoValor, indiceColuna) => {
+          if (preservarDocumentos && colunasDocumento.has(indiceColuna)) {
+            return;
+          }
+
+          const valorAtual = linhaExistente.valores[indiceColuna];
+
+          if (!valoresPlanilhaIguais(valorAtual, novoValor)) {
+            planilha.getRange(linhaExistente.numero, indiceColuna + 1).setValue(novoValor);
+          }
+        });
+      });
     } else {
       // Se é um novo registro, adiciona no final
       planilha.getRange(planilha.getLastRow() + 1, 1, linhas.length, cabecalhosPlanilha.length).setValues(linhas);
     }
+
+    invalidarCacheDesempenho(colaboradoresApontamento.map((colaborador) => colaborador.matricula));
 
     if (dados.cadastroPendente) {
       salvarCadastroPendente(dados);
@@ -135,6 +246,27 @@ function doPost(evento) {
       sucesso: false,
       erro: erro.message || "Erro ao salvar apontamento."
     });
+  }
+}
+
+function validarResponsavelEdicao(planilha, dados) {
+  const cabecalhos = planilha.getRange(1, 1, 1, planilha.getLastColumn()).getValues()[0];
+  const colunaMatricula = obterIndiceCabecalho(cabecalhos, ["Matricula", "Matrícula"]);
+  const colunaTfm = obterIndiceCabecalho(cabecalhos, ["TFM", "Numero do TFM", "Número do TFM"]);
+  const numeroLinha = Number(dados.linhaEditando);
+  const matriculaEditor = String(dados.matriculaUsuarioEditor || "").trim();
+
+  if (colunaMatricula < 0 || colunaTfm < 0 || numeroLinha > planilha.getLastRow()) {
+    throw new Error("Nao foi possivel validar o responsavel por este TFM.");
+  }
+
+  const linhaOriginal = planilha.getRange(numeroLinha, 1, 1, planilha.getLastColumn()).getValues()[0];
+  const matriculaHost = String(linhaOriginal[colunaMatricula] || "").trim();
+  const tfmOriginal = String(linhaOriginal[colunaTfm] || "").trim();
+  const tfmEnviado = String(dados.tfm || "").trim();
+
+  if (!matriculaEditor || matriculaEditor !== matriculaHost || tfmOriginal !== tfmEnviado) {
+    throw new Error("Entre na conta do responsavel por este TFM para edita-lo.");
   }
 }
 
@@ -274,6 +406,27 @@ function doGet(evento) {
       return responderJson(buscarDesempenhoColaborador(matricula));
     }
 
+    if (parametros.acao === "listarTfmsAbertos") {
+      const matricula = String(parametros.matricula || "").trim();
+
+      if (!matricula) {
+        return responderJson({ sucesso: false, erro: "Informe a matricula do colaborador." });
+      }
+
+      return responderJson({ sucesso: true, tfms: listarTfmsAbertos(matricula) });
+    }
+
+    if (parametros.acao === "detalharTfmAberto") {
+      const tfm = String(parametros.tfm || "").trim();
+      const matriculaHost = String(parametros.matriculaHost || "").trim();
+
+      if (!/^\d{6}$/.test(tfm) || !matriculaHost) {
+        return responderJson({ sucesso: false, erro: "Informe um TFM e a matricula do host." });
+      }
+
+      return responderJson(detalharTfmAberto(tfm, matriculaHost));
+    }
+
     if (parametros.acao === "buscarTfms") {
       const tfms = extrairTfmsParametro(parametros.tfms);
 
@@ -379,6 +532,22 @@ function converterHorasNumero(valor) {
   return Number.isFinite(horas) ? horas : 0;
 }
 
+function normalizarValorPlanilha(valor) {
+  if (Object.prototype.toString.call(valor) === "[object Date]" && !Number.isNaN(valor.getTime())) {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+
+  if (typeof valor === "number") {
+    return String(valor);
+  }
+
+  return String(valor == null ? "" : valor).trim().replace(",", ".");
+}
+
+function valoresPlanilhaIguais(valorAtual, novoValor) {
+  return normalizarValorPlanilha(valorAtual) === normalizarValorPlanilha(novoValor);
+}
+
 function criarChaveColaborador(nome, matricula) {
   const matriculaTexto = String(matricula || "").trim();
 
@@ -398,11 +567,10 @@ function registrarColaboradorResultado(resultado, nome, matricula, horas) {
     resultado._colaboradores[chave] = {
       nome: nomeTexto,
       matricula: matriculaTexto,
-      horas: 0
+      horas: converterHorasNumero(horas)
     };
   }
 
-  resultado._colaboradores[chave].horas += converterHorasNumero(horas);
   return chave;
 }
 
@@ -552,7 +720,7 @@ function buscarDocumentosPorTfms(tfms) {
     return acumulador;
   }, {});
 
-  for (let indice = dados.length - 1; indice >= 1; indice -= 1) {
+  for (let indice = 1; indice < dados.length; indice += 1) {
     const linha = dados[indice];
     const tfmLinha = String(linha[colunaTfm] || "").trim();
 
@@ -569,7 +737,7 @@ function buscarDocumentosPorTfms(tfms) {
     if (!resultado.encontrado) {
       Object.assign(resultado, {
         encontrado: true,
-        linhaEditando: indice + 1, // Número da linha para edição
+        linhaEditando: indice + 1,
         data: colunaData >= 0 ? linha[colunaData] : "",
         turno: colunaTurno >= 0 ? linha[colunaTurno] : "",
         nome: nomeLinha,
@@ -585,12 +753,14 @@ function buscarDocumentosPorTfms(tfms) {
       resultado._colaboradorPrincipalChave = chaveColaborador;
     }
 
-    resultado.registros.unshift({
-      data: colunaData >= 0 ? linha[colunaData] : "",
-      atividade: colunaAtividade >= 0 ? linha[colunaAtividade] : "",
-      horas: horasLinha,
-      observacao: colunaObservacao >= 0 ? linha[colunaObservacao] : ""
-    });
+    if (chaveColaborador === resultado._colaboradorPrincipalChave) {
+      resultado.registros.push({
+        data: colunaData >= 0 ? linha[colunaData] : "",
+        atividade: colunaAtividade >= 0 ? linha[colunaAtividade] : "",
+        horas: horasLinha,
+        observacao: colunaObservacao >= 0 ? linha[colunaObservacao] : ""
+      });
+    }
   }
 
   Object.keys(resultados).forEach((tfm) => {
@@ -714,9 +884,27 @@ function buscarGeralOficina() {
       data,
       atividade,
       tfm,
-      horas: Number(horas.toFixed(2))
+      horas: Number(horas.toFixed(2)),
+      emAndamento: false
     });
   }
+
+  obterRegistrosTfmsEmAndamento().forEach((registro) => {
+    registros.push(registro);
+
+    if (!atividades[registro.atividade]) {
+      atividades[registro.atividade] = {
+        atividade: registro.atividade,
+        horas: 0,
+        tfms: {}
+      };
+    }
+
+    atividades[registro.atividade].horas += registro.horas;
+    if (registro.tfm) {
+      atividades[registro.atividade].tfms[registro.tfm] = true;
+    }
+  });
 
   return {
     sucesso: true,
@@ -773,6 +961,20 @@ function buscarHistoricoRecente(limite) {
 }
 
 function buscarDesempenhoColaborador(matricula) {
+  const matriculaBusca = String(matricula || "").trim();
+  const chaveCache = `desempenho:${matriculaBusca}`;
+  const cache = CacheService.getScriptCache();
+
+  try {
+    const respostaCache = cache.get(chaveCache);
+
+    if (respostaCache) {
+      return JSON.parse(respostaCache);
+    }
+  } catch (erro) {
+    console.warn(`Falha ao ler cache de desempenho: ${erro.message}`);
+  }
+
   const aba = obterAbaPrincipal();
   const dados = aba.getDataRange().getValues();
   const cabecalhos = dados[0] || [];
@@ -783,7 +985,6 @@ function buscarDesempenhoColaborador(matricula) {
   const colunaAtividade = obterIndiceCabecalho(cabecalhos, ["Atividade", "Atividade Realizada"]);
   const colunaHoras = obterIndiceCabecalho(cabecalhos, ["Horas", "Horas Trabalhadas"]);
   const colunaObservacao = obterIndiceCabecalho(cabecalhos, ["Observacao", "Observação", "Observacao da atividade", "Observação da atividade"]);
-  const matriculaBusca = String(matricula || "").trim();
   const registros = [];
 
   if (colunaMatricula === -1 || colunaAtividade === -1 || colunaHoras === -1) {
@@ -812,14 +1013,71 @@ function buscarDesempenhoColaborador(matricula) {
       tfm: colunaTfm >= 0 ? linha[colunaTfm] : "",
       atividade,
       horas,
-      observacao: colunaObservacao >= 0 ? linha[colunaObservacao] : ""
+      observacao: colunaObservacao >= 0 ? linha[colunaObservacao] : "",
+      emAndamento: false
     });
   }
 
-  return {
+  registros.push(...obterRegistrosTfmsEmAndamento(matriculaBusca));
+
+  const resposta = {
     sucesso: true,
     registros
   };
+
+  try {
+    const respostaSerializada = JSON.stringify(resposta);
+
+    if (respostaSerializada.length <= 90000) {
+      cache.put(chaveCache, respostaSerializada, 300);
+    }
+  } catch (erro) {
+    console.warn(`Falha ao salvar cache de desempenho: ${erro.message}`);
+  }
+
+  return resposta;
+}
+
+function invalidarCacheDesempenho(matriculas) {
+  const chaves = [...new Set((matriculas || [])
+    .map((matricula) => String(matricula || "").trim())
+    .filter(Boolean)
+    .map((matricula) => `desempenho:${matricula}`))];
+
+  if (chaves.length) {
+    CacheService.getScriptCache().removeAll(chaves);
+  }
+}
+
+function obterRegistrosTfmsEmAndamento(matricula) {
+  const matriculaBusca = String(matricula || "").trim();
+  const aba = obterAbaTfmsAbertos();
+  const dados = aba.getDataRange().getValues();
+  const registros = [];
+
+  for (let indice = 1; indice < dados.length; indice += 1) {
+    const linha = dados[indice];
+    const status = String(linha[0] || "").trim();
+    const matriculaColaborador = String(linha[8] || "").trim();
+    const horas = converterHorasNumero(linha[12]) + converterHorasNumero(linha[18]);
+
+    if (status !== "EM ANDAMENTO" || (matriculaBusca && matriculaColaborador !== matriculaBusca) || horas <= 0) {
+      continue;
+    }
+
+    registros.push({
+      data: linha[3] || linha[2] || "",
+      nome: linha[7] || "",
+      matricula: matriculaColaborador,
+      tfm: String(linha[1] || "").trim(),
+      atividade: String(linha[11] || linha[17] || "Atividade sem nome").trim(),
+      horas: Number(horas.toFixed(2)),
+      observacao: linha[13] || "",
+      emAndamento: true
+    });
+  }
+
+  return registros;
 }
 
 function obterIndiceCabecalho(cabecalhos, nomes) {
@@ -841,4 +1099,415 @@ function responderJson(conteudo) {
   return ContentService
     .createTextOutput(JSON.stringify(conteudo))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function obterAbaTfmsAbertos() {
+  const arquivo = obterArquivoPlanilha();
+  const aba = arquivo.getSheetByName(CONFIG.nomeAbaTfmsAbertos) || arquivo.insertSheet(CONFIG.nomeAbaTfmsAbertos);
+
+  if (aba.getLastRow() === 0) {
+    aba.getRange(1, 1, 1, CABECALHOS_TFMS_ABERTOS.length).setValues([CABECALHOS_TFMS_ABERTOS]);
+  } else {
+    garantirCabecalhos(aba, CABECALHOS_TFMS_ABERTOS);
+  }
+
+  return aba;
+}
+
+function criarLinhaTfmAberto(dados) {
+  return [
+    dados.status || "EM ANDAMENTO",
+    dados.tfm || "",
+    dados.dataInicial || "",
+    dados.dataTrabalhada || "",
+    dados.dataFinal || "",
+    dados.nomeHost || "",
+    dados.matriculaHost || "",
+    dados.nomeColaborador || "",
+    dados.matriculaColaborador || "",
+    dados.turno || "",
+    dados.projeto || "",
+    dados.atividade || "",
+    dados.horas || "",
+    dados.observacao || "",
+    new Date(),
+    dados.nomesDocumentos || "",
+    dados.linksDocumentos || "",
+    dados.atividadeAdicional || "",
+    dados.horasAdicionais || ""
+  ];
+}
+
+function abrirTfmEmAndamento(dados) {
+  try {
+    const aba = obterAbaTfmsAbertos();
+    const tfm = String(dados.tfm || "").trim();
+    const matriculaHost = String(dados.matriculaHost || "").trim();
+    const atividade = String(dados.atividade || "").trim();
+    const horas = converterHorasNumero(dados.horas);
+    const colaboradores = Array.isArray(dados.colaboradoresAdicionais)
+      ? dados.colaboradoresAdicionais.map((item) => ({
+        nome: String(item.nome || "").trim(),
+        matricula: String(item.matricula || "").trim()
+      })).filter((item) => item.nome && item.matricula && item.matricula !== matriculaHost)
+      : [];
+
+    if (!/^\d{6}$/.test(tfm) || !matriculaHost || !dados.nomeHost || !dados.dataInicial || !atividade || horas <= 0) {
+      throw new Error("Preencha TFM, data inicial, responsavel, atividade e horas antes de abrir.");
+    }
+
+    const principal = buscarDocumentoPorTfm(tfm);
+    if (principal && principal.encontrado) {
+      throw new Error("Este TFM ja esta fechado na planilha principal.");
+    }
+
+    if (localizarLinhasTfmAberto(aba, tfm, "EM ANDAMENTO").length) {
+      throw new Error("Este TFM ja esta em andamento.");
+    }
+
+    const documentos = enviarDocumentosPorEmail(dados);
+    const nomesDocumentos = documentos.map((documento) => documento.nome).join(" | ");
+    const linksDocumentos = [...new Set(documentos.map((documento) => documento.url).filter(Boolean))].join(" | ");
+
+    const linhasAbertura = [criarLinhaTfmAberto({
+      status: "EM ANDAMENTO",
+      tfm,
+      dataInicial: dados.dataInicial,
+      dataTrabalhada: dados.dataInicial,
+      nomeHost: dados.nomeHost,
+      matriculaHost,
+      nomeColaborador: dados.nomeHost,
+      matriculaColaborador: matriculaHost,
+      turno: dados.turno,
+      projeto: dados.projeto,
+      atividade,
+      horas,
+      observacao: dados.observacao,
+      nomesDocumentos,
+      linksDocumentos
+    }), ...colaboradores.map((colaborador) => criarLinhaTfmAberto({
+      status: "EM ANDAMENTO",
+      tfm,
+      dataInicial: dados.dataInicial,
+      nomeHost: dados.nomeHost,
+      matriculaHost,
+      nomeColaborador: colaborador.nome,
+      matriculaColaborador: colaborador.matricula,
+      turno: dados.turno,
+      projeto: dados.projeto,
+      nomesDocumentos,
+      linksDocumentos
+    }))];
+
+    aba.getRange(aba.getLastRow() + 1, 1, linhasAbertura.length, CABECALHOS_TFMS_ABERTOS.length).setValues(linhasAbertura);
+    invalidarCacheDesempenho([matriculaHost]);
+
+    return responderJson({ sucesso: true });
+  } catch (erro) {
+    return responderJson({ sucesso: false, erro: erro.message || "Erro ao abrir TFM." });
+  }
+}
+
+function adicionarHorasTfmAberto(dados) {
+  try {
+    const aba = obterAbaTfmsAbertos();
+    const tfm = String(dados.tfm || "").trim();
+    const matricula = String(dados.matriculaColaborador || "").trim();
+    const atividades = Array.isArray(dados.atividades)
+      ? dados.atividades.map((item) => ({
+        atividade: String(item.atividade || "").trim(),
+        horas: converterHorasNumero(item.horas),
+        observacao: String(item.observacao || "").trim()
+      })).filter((item) => item.atividade && item.horas > 0)
+      : [{
+        atividade: String(dados.atividade || "").trim(),
+        horas: converterHorasNumero(dados.horas),
+        observacao: String(dados.observacao || "").trim()
+      }].filter((item) => item.atividade && item.horas > 0);
+    const colaboradoresAdicionais = Array.isArray(dados.colaboradoresAdicionais)
+      ? dados.colaboradoresAdicionais.map((item) => ({
+        nome: String(item.nome || "").trim(),
+        matricula: String(item.matricula || "").trim(),
+        horas: converterHorasNumero(item.horas)
+      })).filter((item) => item.nome && item.matricula && item.horas > 0)
+      : [];
+    const linhasAbertas = localizarLinhasTfmAberto(aba, tfm, "EM ANDAMENTO");
+
+    if (!linhasAbertas.length) {
+      throw new Error("Este TFM nao esta mais em andamento.");
+    }
+
+    if (!dados.dataTrabalhada || !atividades.length) {
+      throw new Error("Informe ao menos uma atividade e as horas trabalhadas.");
+    }
+
+    const abertura = linhasAbertas[0].valores;
+    const linhasHost = atividades.map((atividade, indice) => criarLinhaTfmAberto({
+      status: "EM ANDAMENTO",
+      tfm,
+      dataInicial: abertura[2],
+      dataTrabalhada: dados.dataTrabalhada,
+      nomeHost: abertura[5],
+      matriculaHost: abertura[6],
+      nomeColaborador: dados.nomeColaborador,
+      matriculaColaborador: matricula,
+      turno: abertura[9],
+      projeto: abertura[10],
+      atividade: indice === 0 ? atividade.atividade : "",
+      atividadeAdicional: indice > 0 ? atividade.atividade : "",
+      horas: indice === 0 ? atividade.horas : "",
+      horasAdicionais: indice > 0 ? atividade.horas : "",
+      observacao: atividade.observacao
+    }));
+    const atividadePrincipal = atividades[0];
+    const linhasColaboradores = colaboradoresAdicionais.map((colaborador) => criarLinhaTfmAberto({
+      status: "EM ANDAMENTO",
+      tfm,
+      dataInicial: abertura[2],
+      dataTrabalhada: dados.dataTrabalhada,
+      nomeHost: abertura[5],
+      matriculaHost: abertura[6],
+      nomeColaborador: colaborador.nome,
+      matriculaColaborador: colaborador.matricula,
+      turno: abertura[9],
+      projeto: abertura[10],
+      atividade: atividadePrincipal.atividade,
+      horas: colaborador.horas,
+      observacao: atividadePrincipal.observacao
+    }));
+    const linhas = [...linhasHost, ...linhasColaboradores];
+    aba.getRange(aba.getLastRow() + 1, 1, linhas.length, CABECALHOS_TFMS_ABERTOS.length).setValues(linhas);
+    invalidarCacheDesempenho([matricula, ...colaboradoresAdicionais.map((colaborador) => colaborador.matricula)]);
+
+    return responderJson({ sucesso: true });
+  } catch (erro) {
+    return responderJson({ sucesso: false, erro: erro.message || "Erro ao adicionar horas." });
+  }
+}
+
+function localizarLinhasTfmAberto(aba, tfm, status) {
+  const dados = aba.getDataRange().getValues();
+  const encontrados = [];
+
+  for (let indice = 1; indice < dados.length; indice += 1) {
+    if (String(dados[indice][1] || "").trim() === tfm && (!status || String(dados[indice][0] || "").trim() === status)) {
+      encontrados.push({ numero: indice + 1, valores: dados[indice] });
+    }
+  }
+
+  return encontrados;
+}
+
+function listarTfmsAbertos(matricula) {
+  const aba = obterAbaTfmsAbertos();
+  const dados = aba.getDataRange().getValues();
+  const agrupados = {};
+
+  for (let indice = 1; indice < dados.length; indice += 1) {
+    const linha = dados[indice];
+    const status = String(linha[0] || "").trim();
+    const tfm = String(linha[1] || "").trim();
+
+    if (status !== "EM ANDAMENTO" || !tfm) continue;
+
+    if (!agrupados[tfm]) {
+      agrupados[tfm] = {
+        tfm,
+        status,
+        dataInicial: linha[2],
+        nomeHost: linha[5],
+        matriculaHost: String(linha[6] || ""),
+        turno: linha[9],
+        projeto: linha[10],
+        atividade: linha[11],
+        horasTotal: 0,
+        minhasHoras: 0,
+        ultimoLancamento: "",
+        lancamentos: 0
+      };
+    }
+
+    const horas = converterHorasNumero(linha[12]) + converterHorasNumero(linha[18]);
+    agrupados[tfm].horasTotal += horas;
+    agrupados[tfm].lancamentos += horas > 0 ? 1 : 0;
+    if (String(linha[8] || "").trim() === matricula) agrupados[tfm].minhasHoras += horas;
+    if (linha[3] && (!agrupados[tfm].ultimoLancamento || new Date(linha[3]) > new Date(agrupados[tfm].ultimoLancamento))) {
+      agrupados[tfm].ultimoLancamento = linha[3];
+    }
+  }
+
+  return Object.keys(agrupados).map((tfm) => agrupados[tfm]).sort((a, b) => new Date(b.dataInicial) - new Date(a.dataInicial));
+}
+
+function detalharTfmAberto(tfm, matriculaHost) {
+  const aba = obterAbaTfmsAbertos();
+  const linhas = localizarLinhasTfmAberto(aba, tfm, "EM ANDAMENTO");
+
+  if (!linhas.length) {
+    throw new Error("Este TFM nao esta mais em andamento.");
+  }
+
+  if (String(linhas[0].valores[6] || "").trim() !== matriculaHost) {
+    throw new Error("Somente o host do TFM pode conferir a finalizacao.");
+  }
+
+  return {
+    sucesso: true,
+    tfm,
+    dataInicial: linhas[0].valores[2],
+    projeto: linhas[0].valores[10],
+    registros: linhas
+      .filter((linha) => converterHorasNumero(linha.valores[12]) > 0 || converterHorasNumero(linha.valores[18]) > 0)
+      .map((linha) => ({
+        linha: linha.numero,
+        colunaHoras: converterHorasNumero(linha.valores[12]) > 0 ? 13 : 19,
+        data: linha.valores[3],
+        nome: linha.valores[7],
+        matricula: linha.valores[8],
+        atividade: linha.valores[11],
+        horas: linha.valores[12],
+        atividadeAdicional: linha.valores[17],
+        horasAdicionais: linha.valores[18],
+        observacao: linha.valores[13]
+      }))
+  };
+}
+
+function editarLancamentosTfmAberto(dados) {
+  try {
+    const aba = obterAbaTfmsAbertos();
+    const tfm = String(dados.tfm || "").trim();
+    const matriculaHost = String(dados.matriculaHost || "").trim();
+    const lancamentos = Array.isArray(dados.registros) ? dados.registros : [];
+    const linhasAbertas = localizarLinhasTfmAberto(aba, tfm, "EM ANDAMENTO");
+
+    if (!linhasAbertas.length) throw new Error("Este TFM nao esta mais em andamento.");
+    if (!matriculaHost || matriculaHost !== String(linhasAbertas[0].valores[6] || "").trim()) {
+      throw new Error("Somente o host do TFM pode editar os lancamentos.");
+    }
+    if (!lancamentos.length) throw new Error("Nenhum lancamento foi informado para edicao.");
+
+    const linhasPermitidas = new Set(linhasAbertas.map((linha) => linha.numero));
+    const matriculasAfetadas = [];
+    lancamentos.forEach((lancamento) => {
+      const numeroLinha = Number(lancamento.linha);
+      const colunaHoras = Number(lancamento.colunaHoras);
+      const data = String(lancamento.data || "").trim();
+      const horas = converterHorasNumero(lancamento.horas);
+
+      if (!linhasPermitidas.has(numeroLinha)) throw new Error("Um dos lancamentos nao pertence a este TFM.");
+      if (colunaHoras !== 13 && colunaHoras !== 19) throw new Error("Nao foi possivel identificar as horas do lancamento.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || horas <= 0) {
+        throw new Error("Informe uma data valida e horas maiores que zero.");
+      }
+
+      aba.getRange(numeroLinha, 4).setValue(data);
+      aba.getRange(numeroLinha, colunaHoras).setValue(horas);
+      aba.getRange(numeroLinha, 14).setValue(String(lancamento.observacao || "").trim());
+      matriculasAfetadas.push(aba.getRange(numeroLinha, 9).getValue());
+    });
+
+    const dataInicial = linhasAbertas
+      .map((linha) => aba.getRange(linha.numero, 4).getValue())
+      .map((valor) => {
+        if (Object.prototype.toString.call(valor) === "[object Date]") return valor;
+        const texto = String(valor || "").trim();
+        const correspondencia = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return correspondencia ? new Date(Number(correspondencia[1]), Number(correspondencia[2]) - 1, Number(correspondencia[3])) : null;
+      })
+      .filter((data) => data && !Number.isNaN(data.getTime()))
+      .sort((dataA, dataB) => dataA.getTime() - dataB.getTime())[0];
+
+    if (dataInicial) {
+      linhasAbertas.forEach((linha) => aba.getRange(linha.numero, 3).setValue(dataInicial));
+    }
+
+    invalidarCacheDesempenho(matriculasAfetadas);
+    return responderJson({ sucesso: true });
+  } catch (erro) {
+    return responderJson({ sucesso: false, erro: erro.message || "Erro ao editar lancamentos." });
+  }
+}
+
+function cancelarTfmAberto(dados) {
+  const bloqueio = LockService.getScriptLock();
+
+  try {
+    bloqueio.waitLock(30000);
+    const aba = obterAbaTfmsAbertos();
+    const tfm = String(dados.tfm || "").trim();
+    const matriculaHost = String(dados.matriculaHost || "").trim();
+    const linhasAbertas = localizarLinhasTfmAberto(aba, tfm, "EM ANDAMENTO");
+
+    if (!linhasAbertas.length) throw new Error("Este TFM nao esta mais em andamento.");
+    if (!matriculaHost || matriculaHost !== String(linhasAbertas[0].valores[6] || "").trim()) {
+      throw new Error("Somente o host do TFM pode cancela-lo.");
+    }
+
+    const matriculasAfetadas = linhasAbertas.map((linha) => linha.valores[8]);
+    linhasAbertas.sort((linhaA, linhaB) => linhaB.numero - linhaA.numero).forEach((linha) => {
+      aba.deleteRow(linha.numero);
+    });
+    invalidarCacheDesempenho(matriculasAfetadas);
+
+    return responderJson({ sucesso: true });
+  } catch (erro) {
+    return responderJson({ sucesso: false, erro: erro.message || "Erro ao cancelar TFM." });
+  } finally {
+    bloqueio.releaseLock();
+  }
+}
+
+function fecharTfmAberto(dados) {
+  const bloqueio = LockService.getScriptLock();
+
+  try {
+    bloqueio.waitLock(30000);
+    const abaAbertos = obterAbaTfmsAbertos();
+    const tfm = String(dados.tfm || "").trim();
+    const matriculaHost = String(dados.matriculaHost || "").trim();
+    const linhasAbertas = localizarLinhasTfmAberto(abaAbertos, tfm, "EM ANDAMENTO");
+
+    if (!linhasAbertas.length) throw new Error("Este TFM nao esta mais em andamento.");
+    if (!matriculaHost || matriculaHost !== String(linhasAbertas[0].valores[6] || "").trim()) {
+      throw new Error("Somente o host do TFM pode finaliza-lo.");
+    }
+
+    const lancamentos = linhasAbertas.filter((linha) => (
+      converterHorasNumero(linha.valores[12]) > 0 || converterHorasNumero(linha.valores[18]) > 0
+    ));
+    if (!lancamentos.length) throw new Error("Adicione ao menos um lancamento de horas antes de fechar.");
+
+    const planilha = obterAbaPrincipal();
+    const cabecalhos = planilha.getRange(1, 1, 1, planilha.getLastColumn()).getValues()[0];
+    const linhasPrincipais = lancamentos.map((linha) => criarLinhaApontamento(cabecalhos, {
+      data: linha.valores[3],
+      nome: linha.valores[7],
+      matricula: linha.valores[8],
+      turno: linha.valores[9],
+      tfm: linha.valores[1],
+      projeto: linha.valores[10],
+      atividade: linha.valores[11] || linha.valores[17] || "",
+      horas: linha.valores[12] || linha.valores[18] || "",
+      observacao: linha.valores[13],
+      colaboradoresAdicionais: "",
+      horasColaboradores: "",
+      nomesDocumentos: "",
+      linksDocumentos: ""
+    }));
+
+    planilha.getRange(planilha.getLastRow() + 1, 1, linhasPrincipais.length, cabecalhos.length).setValues(linhasPrincipais);
+    const dataFinal = dados.dataFinal || new Date();
+    linhasAbertas.forEach((linha) => {
+      abaAbertos.getRange(linha.numero, 1).setValue("FECHADO");
+      abaAbertos.getRange(linha.numero, 5).setValue(dataFinal);
+    });
+    invalidarCacheDesempenho(lancamentos.map((linha) => linha.valores[8]));
+
+    return responderJson({ sucesso: true, linhasTransferidas: linhasPrincipais.length });
+  } catch (erro) {
+    return responderJson({ sucesso: false, erro: erro.message || "Erro ao fechar TFM." });
+  } finally {
+    bloqueio.releaseLock();
+  }
 }
