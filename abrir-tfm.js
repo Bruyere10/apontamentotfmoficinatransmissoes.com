@@ -11,6 +11,9 @@ const abertoTfm = document.getElementById("aberto-tfm");
 const abertoProjeto = document.getElementById("aberto-projeto");
 const abertoNomeHost = document.getElementById("aberto-nome-host");
 const abertoMatriculaHost = document.getElementById("aberto-matricula-host");
+const abertoAutorizado = document.getElementById("aberto-autorizado");
+const abertoAutorizadoOpcoes = document.getElementById("aberto-autorizado-opcoes");
+const abertoAutorizadosLista = document.getElementById("aberto-autorizados-lista");
 const abertoAtividade = document.getElementById("aberto-atividade");
 const abertoAtividadeOpcoes = document.getElementById("aberto-atividade-opcoes");
 const abertoHoras = document.getElementById("aberto-horas");
@@ -21,6 +24,9 @@ const abertoDocumentosPreview = document.getElementById("aberto-documentos-previ
 const abertoFeedback = document.getElementById("aberto-feedback");
 const tfmsAbertosStatus = document.getElementById("tfms-abertos-status");
 const tfmsAbertosLista = document.getElementById("tfms-abertos-lista");
+const buscaTfmsAbertos = document.getElementById("busca-tfms-abertos");
+const btnLimparBuscaTfms = document.getElementById("btn-limpar-busca-tfms");
+const tfmsAbertosContagem = document.getElementById("tfms-abertos-contagem");
 const btnAtualizarTfmsAbertos = document.getElementById("btn-atualizar-tfms-abertos");
 const formHorasTfmAberto = document.getElementById("form-horas-tfm-aberto");
 const modalHorasTfmAberto = document.getElementById("modal-horas-tfm-aberto");
@@ -82,6 +88,7 @@ let colaboradoresExtrasLancamento = [];
 let tfmPendenteFinalizacao = "";
 let tfmPendenteEdicao = "";
 let tfmPendenteCancelamento = "";
+let colaboradoresAutorizados = [];
 const colaboradores = [
     { matricula: "87033", nome: "Leonel Barros Pereira Da Silva" }, { matricula: "61449", nome: "Ailton Dos Reis Santana" }, { matricula: "61618", nome: "Airton Fonseca do Nascimento" }, { matricula: "90079", nome: "Albert de Almeida Libério" }, { matricula: "61557", nome: "Aldecir de Oliveira Chaves" }, { matricula: "105741", nome: "Caio Resende Soares" }, { matricula: "61526", nome: "Cláudio Roberto Miranda" }, { matricula: "61461", nome: "Cleiton De Souza" }, { matricula: "61221", nome: "Ecelson Miranda" }, { matricula: "61604", nome: "Edilson Ribeiro de Andrade" }, { matricula: "81531", nome: "Fabio Henrique Alves Ventura" }, { matricula: "61134", nome: "Franklin de Jesus Souza" }, { matricula: "70980", nome: "Geraldo Marçal Da Silva" }, { matricula: "60738", nome: "Gustavo da Silva Amaral" }, { matricula: "62011", nome: "João Paulo de Rezende Trindade" }, { matricula: "83661", nome: "José Edson Martins Coelho" }, { matricula: "91542", nome: "José Egídio Rocha" }, { matricula: "60884", nome: "José Roberto Souza Franco" }, { matricula: "91541", nome: "Paulo Roberto Ferreira" }, { matricula: "63277", nome: "Renato Fagner Foureaux" }, { matricula: "61313", nome: "Renis Mendes Goulart" }, { matricula: "66642", nome: "Ricardo da Silva Matos" }, { matricula: "61834", nome: "Roberto Carlos Vieira Martins" }, { matricula: "60551", nome: "Rodolfo Ribeiro Martins" }, { matricula: "66647", nome: "Romeu Malagoli dos Santos" }, { matricula: "61091", nome: "Sebastião Dirino Correia" }, { matricula: "61367", nome: "Sueimer Batista Pereira" }, { matricula: "61938", nome: "Wender Bortoloto da Costa" }, { matricula: "61124", nome: "Valdemi Amancio Do Nascimento" }, { matricula: "215640", nome: "Renato Basílio dos Santos Júnior" }, { matricula: "208408", nome: "Rafael da Silva Moreira" }
 ];
@@ -355,6 +362,80 @@ function configurarBuscaColaborador() {
     horasColaboradorNome.addEventListener("blur", () => window.setTimeout(fechar, 150));
 }
 
+function renderizarColaboradoresAutorizados() {
+    abertoAutorizadosLista.innerHTML = "";
+
+    colaboradoresAutorizados.forEach((colaborador) => {
+        const item = document.createElement("div");
+        item.className = "tfm-autorizado-item";
+
+        const identificacao = document.createElement("div");
+        const nome = document.createElement("strong");
+        const matricula = document.createElement("span");
+        nome.textContent = colaborador.nome;
+        matricula.textContent = colaborador.matricula;
+        identificacao.append(nome, matricula);
+
+        const remover = document.createElement("button");
+        remover.type = "button";
+        remover.title = "Remover autorização";
+        remover.setAttribute("aria-label", `Remover autorização de ${colaborador.nome}`);
+        remover.innerHTML = '<i class="bi bi-x-lg"></i>';
+        remover.addEventListener("click", () => {
+            colaboradoresAutorizados = colaboradoresAutorizados.filter((itemAutorizado) => itemAutorizado.matricula !== colaborador.matricula);
+            renderizarColaboradoresAutorizados();
+        });
+
+        item.append(identificacao, remover);
+        abertoAutorizadosLista.appendChild(item);
+    });
+}
+
+function configurarBuscaAutorizados() {
+    function fechar() {
+        abertoAutorizadoOpcoes.hidden = true;
+        abertoAutorizado.setAttribute("aria-expanded", "false");
+    }
+
+    function selecionar(colaborador) {
+        colaboradoresAutorizados.push({ nome: colaborador.nome, matricula: colaborador.matricula });
+        abertoAutorizado.value = "";
+        renderizarColaboradoresAutorizados();
+        fechar();
+    }
+
+    function renderizar() {
+        const termos = normalizarTexto(abertoAutorizado.value).split(/\s+/).filter(Boolean);
+        const matriculasSelecionadas = new Set([
+            String(usuarioAtual.matricula),
+            ...colaboradoresAutorizados.map((colaborador) => colaborador.matricula)
+        ]);
+        const filtrados = colaboradores.filter((colaborador) => {
+            const texto = `${normalizarTexto(colaborador.nome)} ${colaborador.matricula}`;
+            return !matriculasSelecionadas.has(colaborador.matricula) && termos.every((termo) => texto.includes(termo));
+        });
+
+        abertoAutorizadoOpcoes.innerHTML = "";
+        filtrados.forEach((colaborador) => {
+            const opcao = document.createElement("button");
+            opcao.type = "button";
+            opcao.setAttribute("role", "option");
+            opcao.textContent = `${colaborador.nome} - ${colaborador.matricula}`;
+            opcao.addEventListener("mousedown", (event) => event.preventDefault());
+            opcao.addEventListener("click", () => selecionar(colaborador));
+            abertoAutorizadoOpcoes.appendChild(opcao);
+        });
+
+        if (!filtrados.length) abertoAutorizadoOpcoes.innerHTML = "<p>Nenhum colaborador disponível.</p>";
+        abertoAutorizadoOpcoes.hidden = false;
+        abertoAutorizado.setAttribute("aria-expanded", "true");
+    }
+
+    abertoAutorizado.addEventListener("focus", renderizar);
+    abertoAutorizado.addEventListener("input", renderizar);
+    abertoAutorizado.addEventListener("blur", () => window.setTimeout(fechar, 150));
+}
+
 async function enviarAcao(dados) {
     const resposta = await fetch(SCRIPT_URL, {
         method: "POST",
@@ -409,6 +490,7 @@ async function abrirNovoTfm(event) {
             projeto: abertoProjeto.value.trim(),
             nomeHost: usuarioAtual.nome,
             matriculaHost: usuarioAtual.matricula,
+            colaboradoresAutorizados,
             atividade,
             horas,
             observacao: abertoObservacao.value.trim(),
@@ -418,6 +500,8 @@ async function abrirNovoTfm(event) {
         abertoDataInicial.value = new Date().toISOString().slice(0, 10);
         abertoNomeHost.value = usuarioAtual.nome;
         abertoMatriculaHost.value = usuarioAtual.matricula;
+        colaboradoresAutorizados = [];
+        renderizarColaboradoresAutorizados();
         arquivosAbertura.length = 0;
         sincronizarArquivos();
         renderizarDocumentos();
@@ -549,10 +633,12 @@ function adicionarAtividadeExtra(event) {
 function renderizarTfms(tfms) {
     tfmsAbertosLista.innerHTML = "";
     tfmsAbertosStatus.hidden = tfms.length > 0;
-    tfmsAbertosStatus.textContent = "Nenhum TFM em andamento no momento.";
+    tfmsAbertosStatus.textContent = tfmsAbertosCarregados.length
+        ? "Nenhum TFM corresponde à pesquisa informada."
+        : "Nenhum TFM em andamento no momento.";
 
     tfms.forEach((item) => {
-        const hostAtual = String(item.matriculaHost) === String(usuarioAtual.matricula);
+        const podeGerenciar = Boolean(item.podeGerenciar);
         const card = document.createElement("article");
         card.className = "tfm-aberto-card";
         card.innerHTML = `
@@ -572,14 +658,29 @@ function renderizarTfms(tfms) {
                 <div><span>Último dia</span><strong>${item.ultimoLancamento ? formatarData(item.ultimoLancamento) : "Sem lançamento"}</strong></div>
             </div>
             <div class="tfm-aberto-acoes">
-                ${hostAtual ? `<button type="button" class="btn-adicionar-horas" data-adicionar-horas="${item.tfm}"><i class="bi bi-calendar-plus"></i><span>Editar calendário</span></button>` : ""}
-                ${hostAtual ? `<button type="button" class="btn-editar-lancamentos" data-editar-lancamentos="${item.tfm}"><i class="bi bi-pencil-square"></i><span>Editar lançamentos</span></button>` : ""}
-                ${hostAtual ? `<button type="button" class="btn-finalizar-tfm" data-finalizar-tfm="${item.tfm}"><i class="bi bi-check2-circle"></i><span>Finalizar TFM</span></button>` : ""}
-                ${hostAtual ? `<button type="button" class="btn-cancelar-tfm" data-cancelar-tfm="${item.tfm}"><i class="bi bi-trash3"></i><span>Cancelar TFM</span></button>` : ""}
+                ${podeGerenciar ? `<button type="button" class="btn-adicionar-horas" data-adicionar-horas="${item.tfm}"><i class="bi bi-calendar-plus"></i><span>Editar calendário</span></button>` : ""}
+                ${podeGerenciar ? `<button type="button" class="btn-editar-lancamentos" data-editar-lancamentos="${item.tfm}"><i class="bi bi-pencil-square"></i><span>Editar lançamentos</span></button>` : ""}
+                ${podeGerenciar ? `<button type="button" class="btn-finalizar-tfm" data-finalizar-tfm="${item.tfm}"><i class="bi bi-check2-circle"></i><span>Finalizar TFM</span></button>` : ""}
+                ${podeGerenciar ? `<button type="button" class="btn-cancelar-tfm" data-cancelar-tfm="${item.tfm}"><i class="bi bi-trash3"></i><span>Cancelar TFM</span></button>` : ""}
             </div>
         `;
         tfmsAbertosLista.appendChild(card);
     });
+}
+
+function filtrarTfmsAbertos() {
+    const busca = buscaTfmsAbertos.value.replace(/\D/g, "").slice(0, 6);
+    buscaTfmsAbertos.value = busca;
+    btnLimparBuscaTfms.hidden = !busca;
+
+    const tfmsFiltrados = busca
+        ? tfmsAbertosCarregados.filter((item) => String(item.tfm || "").includes(busca))
+        : tfmsAbertosCarregados;
+
+    tfmsAbertosContagem.textContent = busca
+        ? `${tfmsFiltrados.length} de ${tfmsAbertosCarregados.length} TFM(s)`
+        : `${tfmsAbertosCarregados.length} TFM(s) em andamento`;
+    renderizarTfms(tfmsFiltrados);
 }
 
 async function carregarTfmsAbertos() {
@@ -591,10 +692,11 @@ async function carregarTfmsAbertos() {
         const dados = await resposta.json();
         if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Erro ao carregar TFMs em andamento.");
         tfmsAbertosCarregados = Array.isArray(dados.tfms) ? dados.tfms : [];
-        renderizarTfms(tfmsAbertosCarregados);
+        filtrarTfmsAbertos();
     } catch (erro) {
         tfmsAbertosStatus.hidden = false;
         tfmsAbertosStatus.textContent = erro.message;
+        tfmsAbertosContagem.textContent = "";
     }
 }
 
@@ -866,6 +968,7 @@ if (aplicarLogin()) {
     configurarBuscaAtividade(abertoAtividade, abertoAtividadeOpcoes);
     configurarBuscaAtividade(atividadeHorasNome, atividadeHorasOpcoes);
     configurarBuscaColaborador();
+    configurarBuscaAutorizados();
 }
 
 document.querySelectorAll("[data-tfm-view]").forEach((botao) => {
@@ -876,6 +979,12 @@ formHorasTfmAberto.addEventListener("submit", adicionarHoras);
 formAtividadeHoras.addEventListener("submit", adicionarAtividadeExtra);
 formColaboradorHoras.addEventListener("submit", adicionarColaboradorExtra);
 btnAtualizarTfmsAbertos.addEventListener("click", carregarTfmsAbertos);
+buscaTfmsAbertos.addEventListener("input", filtrarTfmsAbertos);
+btnLimparBuscaTfms.addEventListener("click", () => {
+    buscaTfmsAbertos.value = "";
+    filtrarTfmsAbertos();
+    buscaTfmsAbertos.focus();
+});
 btnAdicionarAtividadeHoras.addEventListener("click", abrirModalAtividadeHoras);
 btnFecharAtividadeHoras.addEventListener("click", fecharModalAtividadeHoras);
 btnAdicionarColaboradorHoras.addEventListener("click", abrirModalColaboradorHoras);

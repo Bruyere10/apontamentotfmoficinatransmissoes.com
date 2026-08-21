@@ -13,7 +13,7 @@
             <article class="site-help-step"><span>6</span><div><strong>Finalize somente quando concluir</strong><p>Quando todo o trabalho estiver encerrado, o host seleciona <em>Finalizar TFM</em>, revisa os lançamentos e confirma. Nesse momento as horas deixam de estar em andamento e passam para os registros concluídos do banco de dados.</p></div></article>
             <article class="site-help-step"><span>7</span><div><strong>Evite problemas no lançamento</strong><p>Use ponto nas horas decimais, por exemplo 7.5. Não abra o mesmo número de TFM duas vezes. Se houver erro, informe o número do TFM, a data e a matrícula ao responsável antes de finalizar.</p></div></article>
         </div>
-        <p class="site-help-note"><strong>Importante:</strong> só o host pode editar o calendário e finalizar o TFM. Os demais colaboradores devem ser incluídos pelo host no lançamento diário, com suas próprias horas.</p>`
+        <p class="site-help-note"><strong>Importante:</strong> o host pode autorizar colaboradores a editar, finalizar ou cancelar o TFM sem lançar horas para eles. Colaboradores que trabalharam na atividade devem ser incluídos separadamente no lançamento diário, com suas próprias horas.</p>`
         },
         "meu-desempenho.html": {
             title: "Como consultar meu desempenho",

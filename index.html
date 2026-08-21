@@ -266,16 +266,31 @@
                     </div>
 
                     <div class="campo campo-inteiro">
-                        <label for="modal-colaborador-horas">Horas</label>
+                        <label for="modal-colaborador-data">Data trabalhada</label>
+                        <div class="input-icon">
+                            <i class="bi bi-calendar3"></i>
+                            <input id="modal-colaborador-data" type="date">
+                        </div>
+                    </div>
+
+                    <div class="campo campo-inteiro">
+                        <label for="modal-colaborador-horas">Horas nesta data</label>
                         <div class="input-icon">
                             <i class="bi bi-clock-history"></i>
                             <input id="modal-colaborador-horas" type="text" placeholder="Ex: 1.5" inputmode="decimal">
                         </div>
                     </div>
 
+                    <button type="button" class="btn-adicionar-dia-colaborador">
+                        <i class="bi bi-calendar-plus"></i>
+                        <span>Adicionar data e horas</span>
+                    </button>
+
+                    <div id="modal-colaborador-lancamentos" class="modal-colaborador-lancamentos" aria-live="polite"></div>
+
                     <button type="button" class="btn-confirmar-colaborador">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>Adicionar colaborador</span>
+                        <i class="bi bi-check2-circle"></i>
+                        <span>Salvar colaborador</span>
                     </button>
                 </div>
             </div>
@@ -352,7 +367,7 @@
                         <span>03</span>
                         <div>
                             <strong>Adicione colaboradores extras</strong>
-                            <p>Use Colaboradores adicionais quando mais de uma pessoa trabalhou no mesmo TFM. Informe nome e horas de cada pessoa.</p>
+                            <p>Use Colaboradores adicionais quando mais de uma pessoa trabalhou no mesmo TFM. Para cada pessoa, adicione manualmente cada data trabalhada e suas horas.</p>
                         </div>
                     </div>
 
@@ -645,7 +660,7 @@
                                 <div class="colaboradores-adicionais-topo">
                                     <div>
                                         <label>Colaboradores adicionais</label>
-                                        <small>Use quando mais de uma pessoa trabalhou no mesmo TFM.</small>
+                                        <small>Escolha a pessoa e informe manualmente as horas de cada data trabalhada.</small>
                                     </div>
 
                                     <button type="button" class="btn-add-colaborador">
@@ -788,7 +803,7 @@
                             <div class="painel-dados-topo">
                                 <span>Novo trabalho contínuo</span>
                                 <h1>Abrir TFM</h1>
-                                <p>Cadastre um TFM em andamento. Ele só será enviado ao BI quando o host finalizar o trabalho.</p>
+                                <p>Cadastre um TFM em andamento. O host ou um colaborador autorizado poderá finalizar o trabalho.</p>
                             </div>
 
                             <form id="form-abrir-tfm" class="card tfm-aberto-form" novalidate>
@@ -845,7 +860,7 @@
                                 <div>
                                     <span>Trabalhos contínuos</span>
                                     <h1>TFMs em andamento</h1>
-                                    <p>Adicione suas horas diárias. Somente o host pode finalizar e enviar o TFM ao BI.</p>
+                                    <p>Adicione suas horas diárias. O host e os colaboradores autorizados podem gerenciar e finalizar o TFM.</p>
                                 </div>
                                 <button type="button" id="btn-atualizar-tfms-abertos" class="btn-icone-texto">
                                     <i class="bi bi-arrow-clockwise"></i>

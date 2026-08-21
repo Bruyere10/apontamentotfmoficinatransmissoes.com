@@ -52,7 +52,7 @@
                 <div>
                     <span>Novo trabalho contínuo</span>
                     <h1>Abrir TFM</h1>
-                    <p>Cadastre um TFM em andamento. Ele só será enviado ao Banco de Dados quando o Host finalizar a Atividade.</p>
+                    <p>Cadastre um TFM em andamento. O host ou um colaborador autorizado poderá finalizar a atividade.</p>
                 </div>
             </div>
 
@@ -78,6 +78,16 @@
                         <div class="tfm-form-grupo-campos">
                             <label><span>Nome do colaborador</span><input id="aberto-nome-host" type="text" readonly aria-readonly="true"></label>
                             <label><span>Matrícula</span><input id="aberto-matricula-host" type="text" readonly aria-readonly="true"></label>
+                            <label class="tfm-campo-inteiro">
+                                <span>Colaboradores autorizados <small>Opcional</small></span>
+                                <div class="tfm-colaborador-combobox">
+                                    <i class="bi bi-person-plus"></i>
+                                    <input id="aberto-autorizado" type="search" placeholder="Pesquisar colaborador" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="aberto-autorizado-opcoes" aria-autocomplete="list">
+                                    <div id="aberto-autorizado-opcoes" class="tfm-atividade-opcoes" role="listbox" hidden></div>
+                                </div>
+                                <small>Os selecionados poderão editar, finalizar ou cancelar este TFM, sem receber horas.</small>
+                            </label>
+                            <div id="aberto-autorizados-lista" class="tfm-autorizados-lista tfm-campo-inteiro" aria-live="polite"></div>
                         </div>
                     </section>
                     <section class="tfm-form-grupo tfm-form-grupo-apontamento">
@@ -117,12 +127,24 @@
                 <div>
                     <span>Trabalhos contínuos</span>
                     <h1>TFMs em andamento</h1>
-                    <p>Adicione suas horas diárias. Somente o host pode finalizar e enviar o TFM ao BI.</p>
+                    <p>Adicione suas horas diárias. O host e os colaboradores autorizados podem gerenciar e finalizar o TFM.</p>
                 </div>
                 <button type="button" id="btn-atualizar-tfms-abertos" class="btn-atualizar-geral">
                     <i class="bi bi-arrow-clockwise"></i>
                     <span>Atualizar</span>
                 </button>
+            </div>
+
+            <div class="tfms-abertos-busca" role="search">
+                <label for="busca-tfms-abertos">Pesquisar TFM em andamento</label>
+                <div class="tfms-abertos-busca-controle">
+                    <i class="bi bi-search"></i>
+                    <input id="busca-tfms-abertos" type="search" inputmode="numeric" maxlength="6" placeholder="Digite o número do TFM" autocomplete="off">
+                    <button type="button" id="btn-limpar-busca-tfms" aria-label="Limpar pesquisa" title="Limpar pesquisa" hidden>
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <span id="tfms-abertos-contagem" aria-live="polite"></span>
             </div>
 
             <p id="tfms-abertos-status" class="oficina-status">Carregando TFMs em andamento...</p>

@@ -142,7 +142,10 @@ const modalObservacaoInput = document.getElementById("modal-observacao-input");
 const modalHorasInput = document.getElementById("modal-horas-input");
 const modalColaboradorNomeInput = document.getElementById("modal-colaborador-nome");
 const modalColaboradorMatriculaInput = document.getElementById("modal-colaborador-matricula");
+const modalColaboradorDataInput = document.getElementById("modal-colaborador-data");
 const modalColaboradorHorasInput = document.getElementById("modal-colaborador-horas");
+const modalColaboradorLancamentos = document.getElementById("modal-colaborador-lancamentos");
+const btnAdicionarDiaColaborador = document.querySelector(".btn-adicionar-dia-colaborador");
 const feedbackGlobal = document.getElementById("feedback-global");
 const resumoAtividades = document.getElementById("resumo-atividades");
 const resumoSalvos = document.getElementById("resumo-salvos");
@@ -228,6 +231,7 @@ let oficinaGeralCarregada = false;
 let oficinaGeralRequisicaoAtual = 0;
 let atividadeEmEdicao = null;
 let colaboradorEmEdicao = null;
+let lancamentosColaboradorModal = [];
 let documentosEmVerificacao = null;
 let salvamentoIntervalo = null;
 let consultaTfmIntervalo = null;
@@ -626,6 +630,53 @@ function coletarDistribuicaoManualDiaria() {
         horas: Number(converterHorasNumero(input.value).toFixed(2)),
         input
     }));
+}
+
+function consolidarRegistrosParaEdicao(registros) {
+    const atividades = new Map();
+    const horasPorDia = new Map();
+
+    registros.forEach((registro) => {
+        const atividade = String(registro.atividade || "").trim();
+        const observacao = String(registro.observacao || "").trim();
+        const horas = converterHorasNumero(registro.horas);
+        const chaveAtividade = `${atividade}\u0000${observacao}`;
+        const data = normalizarDataInput(registro.data);
+
+        if (!atividades.has(chaveAtividade)) {
+            atividades.set(chaveAtividade, { atividade, observacao, horas: 0 });
+        }
+
+        atividades.get(chaveAtividade).horas += horas;
+
+        if (registro.data) {
+            horasPorDia.set(data, (horasPorDia.get(data) || 0) + horas);
+        }
+    });
+
+    return {
+        atividades: Array.from(atividades.values()).map((atividade) => ({
+            ...atividade,
+            horas: Number(atividade.horas.toFixed(2))
+        })),
+        horasPorDia
+    };
+}
+
+function preencherDistribuicaoManual(horasPorDia) {
+    if (!distribuicaoManualToggle || !horasPorDia.size) {
+        return;
+    }
+
+    distribuicaoManualToggle.checked = true;
+    alternarDistribuicaoManual();
+
+    document.querySelectorAll(".distribuicao-manual-horas").forEach((input) => {
+        const horas = horasPorDia.get(input.dataset.data) || 0;
+        input.value = Number(horas.toFixed(2)).toString();
+    });
+
+    atualizarResumoDistribuicaoManual();
 }
 
 function distribuirCentavosPorPeso(totalCentavos, pesosCentavos) {
@@ -1177,11 +1228,21 @@ function configurarDocumento(input) {
 }
 
 function criarColaboradorAdicionalItem(dados = {}) {
+    const lancamentos = Array.isArray(dados.lancamentos)
+        ? dados.lancamentos.map((lancamento) => ({
+            data: normalizarDataInput(lancamento.data),
+            horas: Number(converterHorasNumero(lancamento.horas).toFixed(2))
+        })).filter((lancamento) => lancamento.data && lancamento.horas > 0)
+        : [];
     const item = document.createElement("div");
     item.className = "colaborador-adicional-item bloco-item detalhes-item-compacto";
     item.innerHTML = `
         <div class="bloco-cabecalho">
             <span class="bloco-numero" aria-label="Colaborador adicional"><i class="bi bi-person"></i></span>
+            <div class="colaborador-adicional-resumo">
+                <strong>Colaborador adicional</strong>
+                <span>Sem lançamentos</span>
+            </div>
             <div class="atividade-resumo-acoes">
                 <button type="button" class="btn-editar-colaborador" aria-label="Editar colaborador adicional">
                     <i class="bi bi-pencil-square"></i>
@@ -1196,11 +1257,13 @@ function criarColaboradorAdicionalItem(dados = {}) {
         <input type="hidden" class="colaborador-adicional-nome">
         <input type="hidden" class="colaborador-adicional-matricula">
         <input type="hidden" class="colaborador-adicional-horas">
+        <input type="hidden" class="colaborador-adicional-lancamentos">
     `;
 
     item.querySelector(".colaborador-adicional-nome").value = dados.nome || "";
     item.querySelector(".colaborador-adicional-matricula").value = dados.matricula || "";
-    item.querySelector(".colaborador-adicional-horas").value = dados.horas || "";
+    item.querySelector(".colaborador-adicional-lancamentos").value = JSON.stringify(lancamentos);
+    item.querySelector(".colaborador-adicional-horas").value = lancamentos.reduce((total, lancamento) => total + converterHorasNumero(lancamento.horas), 0).toFixed(2);
     atualizarResumoColaboradorAdicional(item);
 
     return item;
@@ -1215,11 +1278,26 @@ function adicionarColaboradorAdicional(dados = {}) {
 function atualizarResumoColaboradorAdicional(item) {
     const nome = item.querySelector(".colaborador-adicional-nome")?.value.trim() || "colaborador adicional";
     const matricula = item.querySelector(".colaborador-adicional-matricula")?.value.trim();
-    const horas = item.querySelector(".colaborador-adicional-horas")?.value.trim();
+    const lancamentos = obterLancamentosColaboradorItem(item);
+    const horas = lancamentos.reduce((total, lancamento) => total + converterHorasNumero(lancamento.horas), 0);
     const icone = item.querySelector(".bloco-numero");
+    const resumoNome = item.querySelector(".colaborador-adicional-resumo strong");
+    const resumoDados = item.querySelector(".colaborador-adicional-resumo span");
+
+    if (resumoNome) resumoNome.textContent = nome;
+    if (resumoDados) resumoDados.textContent = `${matricula || "Sem matrícula"} · ${lancamentos.length} dia(s) · ${formatarHoras(horas)}`;
 
     if (icone) {
-        icone.title = `${nome}${matricula ? ` - ${matricula}` : ""}${horas ? ` - ${horas}h` : ""}`;
+        icone.title = `${nome}${matricula ? ` - ${matricula}` : ""}${lancamentos.length ? ` - ${lancamentos.length} dia(s) - ${formatarHoras(horas)}` : ""}`;
+    }
+}
+
+function obterLancamentosColaboradorItem(item) {
+    try {
+        const lancamentos = JSON.parse(item?.querySelector(".colaborador-adicional-lancamentos")?.value || "[]");
+        return Array.isArray(lancamentos) ? lancamentos : [];
+    } catch (erro) {
+        return [];
     }
 }
 
@@ -1381,8 +1459,8 @@ function coletarColaboradoresAdicionais() {
     return Array.from(document.querySelectorAll(".colaborador-adicional-item")).map((item) => ({
         nome: item.querySelector(".colaborador-adicional-nome").value.trim(),
         matricula: item.querySelector(".colaborador-adicional-matricula").value.trim(),
-        horas: normalizarHoras(item.querySelector(".colaborador-adicional-horas").value)
-    })).filter(({ nome, matricula, horas }) => nome || matricula || horas);
+        lancamentos: obterLancamentosColaboradorItem(item)
+    })).filter(({ nome, matricula, lancamentos }) => nome || matricula || lancamentos.length);
 }
 
 function normalizarHoras(valor) {
@@ -1585,7 +1663,10 @@ function abrirModalColaborador(item = null) {
     colaboradorEmEdicao = item;
     modalColaboradorNomeInput.value = item?.querySelector(".colaborador-adicional-nome")?.value || "";
     modalColaboradorMatriculaInput.value = item?.querySelector(".colaborador-adicional-matricula")?.value || "";
-    modalColaboradorHorasInput.value = item?.querySelector(".colaborador-adicional-horas")?.value || "";
+    modalColaboradorDataInput.value = "";
+    modalColaboradorHorasInput.value = "";
+    lancamentosColaboradorModal = item ? obterLancamentosColaboradorItem(item).map((lancamento) => ({ ...lancamento })) : [];
+    renderizarLancamentosColaboradorModal();
     document.getElementById("modal-colaborador-titulo").textContent = item ? "Editar colaborador" : "Adicionar colaborador";
     btnConfirmarColaborador.querySelector("span").textContent = item ? "Salvar alterações" : "Adicionar colaborador";
     modalColaborador.hidden = false;
@@ -1598,10 +1679,14 @@ function fecharModalColaborador() {
     colaboradorEmEdicao = null;
     modalColaboradorNomeInput.value = "";
     modalColaboradorMatriculaInput.value = "";
+    modalColaboradorDataInput.value = "";
     modalColaboradorHorasInput.value = "";
+    lancamentosColaboradorModal = [];
+    modalColaboradorLancamentos.innerHTML = "";
     document.getElementById("modal-colaborador-titulo").textContent = "Adicionar colaborador";
     btnConfirmarColaborador.querySelector("span").textContent = "Adicionar colaborador";
     marcarCampo(modalColaboradorNomeInput, false);
+    marcarCampo(modalColaboradorDataInput, false);
     marcarCampo(modalColaboradorHorasInput, false);
     fecharSugestoes();
     document.body.classList.remove("modal-aberto");
@@ -1665,24 +1750,65 @@ function adicionarAtividadeDoModal() {
     atualizarResumo();
 }
 
+function renderizarLancamentosColaboradorModal() {
+    modalColaboradorLancamentos.innerHTML = "";
+
+    lancamentosColaboradorModal.forEach((lancamento, indice) => {
+        const item = document.createElement("div");
+        item.className = "modal-colaborador-lancamento-item";
+        item.innerHTML = `
+            <div><strong>${formatarData(lancamento.data)}</strong><span>${formatarHoras(lancamento.horas)}</span></div>
+            <button type="button" data-remover-lancamento-colaborador="${indice}" aria-label="Remover lançamento de ${formatarData(lancamento.data)}"><i class="bi bi-trash3"></i></button>
+        `;
+        modalColaboradorLancamentos.appendChild(item);
+    });
+}
+
+function adicionarLancamentoColaboradorDoModal() {
+    const data = modalColaboradorDataInput.value;
+    const horas = converterHorasNumero(modalColaboradorHorasInput.value);
+    const dataInicio = obterDataInicioTfmInput()?.value;
+    const dataFim = obterDataFimTfmInput()?.value;
+    const dataInvalida = !data || (dataInicio && data < dataInicio) || (dataFim && data > dataFim);
+
+    marcarCampo(modalColaboradorDataInput, dataInvalida, "Escolha uma data dentro do período do TFM.");
+    marcarCampo(modalColaboradorHorasInput, !horas || horas <= 0, "Informe as horas trabalhadas nessa data.");
+
+    if (dataInvalida || horas <= 0) {
+        mostrarFeedback("Informe uma data do período e as horas trabalhadas.", "erro");
+        return;
+    }
+
+    const existente = lancamentosColaboradorModal.find((lancamento) => lancamento.data === data);
+    if (existente) {
+        existente.horas = Number(horas.toFixed(2));
+    } else {
+        lancamentosColaboradorModal.push({ data, horas: Number(horas.toFixed(2)) });
+        lancamentosColaboradorModal.sort((primeiro, segundo) => primeiro.data.localeCompare(segundo.data));
+    }
+
+    modalColaboradorDataInput.value = "";
+    modalColaboradorHorasInput.value = "";
+    renderizarLancamentosColaboradorModal();
+    limparFeedback();
+}
+
 function adicionarColaboradorDoModal() {
     const nome = modalColaboradorNomeInput.value.trim();
     const matricula = modalColaboradorMatriculaInput.value.trim();
-    const horas = normalizarHoras(modalColaboradorHorasInput.value);
-    const horasNumero = Number(horas);
 
     marcarCampo(modalColaboradorNomeInput, !nome, "Informe o nome do colaborador.");
-    marcarCampo(modalColaboradorHorasInput, !horasNumero || horasNumero <= 0, "Informe as horas desse colaborador.");
 
-    if (!nome || !horasNumero || horasNumero <= 0) {
-        mostrarFeedback("Informe nome e horas do colaborador antes de adicionar.", "erro");
+    if (!nome || !matricula || !lancamentosColaboradorModal.length) {
+        mostrarFeedback("Selecione o colaborador e adicione pelo menos uma data com horas.", "erro");
         return;
     }
 
     const item = colaboradorEmEdicao || criarColaboradorAdicionalItem();
     item.querySelector(".colaborador-adicional-nome").value = nome;
     item.querySelector(".colaborador-adicional-matricula").value = matricula;
-    item.querySelector(".colaborador-adicional-horas").value = horas;
+    item.querySelector(".colaborador-adicional-lancamentos").value = JSON.stringify(lancamentosColaboradorModal);
+    item.querySelector(".colaborador-adicional-horas").value = lancamentosColaboradorModal.reduce((total, lancamento) => total + converterHorasNumero(lancamento.horas), 0).toFixed(2);
 
     if (!colaboradorEmEdicao) {
         colaboradoresAdicionaisLista.appendChild(item);
@@ -2358,7 +2484,7 @@ function criarComprovanteApontamento(dados) {
                     <div class="resultado-atividade-item">
                         <div><span>Nome</span><strong>${formatarValor(colaborador.nome)}</strong></div>
                         <div><span>Matrícula</span><strong>${formatarValor(colaborador.matricula)}</strong></div>
-                        <div><span>Horas</span><strong>${formatarValor(colaborador.horas)}</strong></div>
+                        <div><span>Dias e horas</span><strong>${(colaborador.lancamentos || []).map((lancamento) => `${formatarData(lancamento.data)}: ${formatarHoras(lancamento.horas)}`).join(" · ") || "-"}</strong></div>
                     </div>
                 `).join("")}
             </div>
@@ -2634,7 +2760,7 @@ function criarResultadoTfm(dados) {
             <div class="resultado-atividade-item">
                 <div><span>Nome</span><strong>${formatarValor(colaborador.nome)}</strong></div>
                 <div><span>Matrícula</span><strong>${formatarValor(colaborador.matricula)}</strong></div>
-                <div><span>Horas</span><strong>${formatarValor(colaborador.horas)}</strong></div>
+                <div><span>Dias e horas</span><strong>${(colaborador.lancamentos || []).map((lancamento) => `${formatarData(lancamento.data)}: ${formatarHoras(lancamento.horas)}`).join(" · ") || "-"}</strong></div>
             </div>
         `).join("")}`;
         conteudo.appendChild(colaboradores);
@@ -2825,11 +2951,6 @@ function carregarTfmNoFormulario(dados) {
     // Armazenar qual linha está sendo editada
     linhaEditando = dados.linhaEditando || null;
 
-    if (distribuicaoManualToggle) {
-        distribuicaoManualToggle.checked = false;
-        alternarDistribuicaoManual();
-    }
-
     document.getElementById("data-inicio-tfm").value = dataInicio;
     document.getElementById("data-fim-tfm").value = dataFim;
     document.getElementById("nome").value = dados.nome || "";
@@ -2840,6 +2961,7 @@ function carregarTfmNoFormulario(dados) {
     renderizarColaboradoresAdicionais(Array.isArray(dados.colaboradoresAdicionais) ? dados.colaboradoresAdicionais : []);
 
     const registros = Array.isArray(dados.registros) ? dados.registros : [];
+    const dadosEdicao = consolidarRegistrosParaEdicao(registros);
     document.querySelectorAll(".detalhes-item").forEach((item, index) => {
         if (index > 0) {
             item.remove();
@@ -2847,7 +2969,7 @@ function carregarTfmNoFormulario(dados) {
     });
 
     const primeiroItem = document.querySelector(".detalhes-item");
-    const itens = registros.length ? registros : [{ atividade: "", observacao: "" }];
+    const itens = dadosEdicao.atividades.length ? dadosEdicao.atividades : [{ atividade: "", observacao: "", horas: "" }];
     itens.forEach((registro, index) => {
         const item = index === 0 ? primeiroItem : criarDetalhesItem(index + 1);
         item.querySelector(".atividade-input").value = registro.atividade || "";
@@ -2861,7 +2983,7 @@ function carregarTfmNoFormulario(dados) {
     });
 
     renumerarAtividades();
-    atualizarResumoDistribuicaoManual();
+    preencherDistribuicaoManual(dadosEdicao.horasPorDia);
     fecharModalTfm();
     alternarAppTab("registro"); // Redireciona para a aba de dados
     mostrarFeedback("Dados carregados no formulário. Confira antes de salvar novamente.", "aviso");
@@ -2886,16 +3008,20 @@ function validarFormulario() {
 
     for (const item of document.querySelectorAll(".colaborador-adicional-item")) {
         const nomeInput = item.querySelector(".colaborador-adicional-nome");
-        const horasInput = item.querySelector(".colaborador-adicional-horas");
         const nome = nomeInput.value.trim();
-        const horas = Number(normalizarHoras(horasInput.value));
+        const lancamentos = obterLancamentosColaboradorItem(item);
+        const lancamentoForaPeriodo = lancamentos.find((lancamento) => (
+            !lancamento.data
+            || lancamento.data < dataInicioInput.value
+            || lancamento.data > dataFimInput.value
+            || converterHorasNumero(lancamento.horas) <= 0
+        ));
 
         marcarCampo(nomeInput, !nome, "Informe o nome do colaborador.");
-        marcarCampo(horasInput, !horas || horas <= 0, "Informe as horas desse colaborador.");
 
-        if (!nome || !horas || horas <= 0) {
-            mostrarFeedback("Preencha nome e horas dos colaboradores adicionais ou remova a linha.", "erro");
-            (!nome ? nomeInput : horasInput).focus();
+        if (!nome || !lancamentos.length || lancamentoForaPeriodo) {
+            mostrarFeedback("Cada colaborador adicional precisa ter datas válidas dentro do período e horas maiores que zero.", "erro");
+            nomeInput.focus();
             return false;
         }
     }
@@ -3266,6 +3392,7 @@ btnSugerirAtividade.addEventListener("click", enviarSugestaoAtividade);
 btnEnviarFeedback.addEventListener("click", enviarFeedbackColaborador);
 btnConfirmarAtividade.addEventListener("click", adicionarAtividadeDoModal);
 btnConfirmarColaborador.addEventListener("click", adicionarColaboradorDoModal);
+btnAdicionarDiaColaborador.addEventListener("click", adicionarLancamentoColaboradorDoModal);
 btnAddColaborador.addEventListener("click", () => abrirModalColaborador());
 colaboradoresAdicionaisLista.addEventListener("click", (event) => {
     const botaoRemover = event.target.closest(".btn-remover-colaborador");
@@ -3280,6 +3407,12 @@ colaboradoresAdicionaisLista.addEventListener("click", (event) => {
         botaoRemover.closest(".colaborador-adicional-item").remove();
         atualizarNumeracaoColaboradoresAdicionais();
     }
+});
+modalColaboradorLancamentos.addEventListener("click", (event) => {
+    const botao = event.target.closest("[data-remover-lancamento-colaborador]");
+    if (!botao) return;
+    lancamentosColaboradorModal.splice(Number(botao.dataset.removerLancamentoColaborador), 1);
+    renderizarLancamentosColaboradorModal();
 });
 buscaTfmInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
