@@ -92,6 +92,10 @@ function doPost(evento) {
       return editarLancamentosTfmAberto(dados);
     }
 
+    if (dados.acao === "excluirLancamentoTfmAberto") {
+      return excluirLancamentoTfmAberto(dados);
+    }
+
     if (dados.acao === "cancelarTfmAberto") {
       return cancelarTfmAberto(dados);
     }
@@ -1426,6 +1430,40 @@ function editarLancamentosTfmAberto(dados) {
     return responderJson({ sucesso: true });
   } catch (erro) {
     return responderJson({ sucesso: false, erro: erro.message || "Erro ao editar lancamentos." });
+  }
+}
+
+function excluirLancamentoTfmAberto(dados) {
+  const bloqueio = LockService.getScriptLock();
+
+  try {
+    bloqueio.waitLock(30000);
+    const aba = obterAbaTfmsAbertos();
+    const tfm = String(dados.tfm || "").trim();
+    const matriculaHost = String(dados.matriculaHost || "").trim();
+    const numeroLinha = Number(dados.linha);
+    const linhasAbertas = localizarLinhasTfmAberto(aba, tfm, "EM ANDAMENTO");
+
+    if (!linhasAbertas.length) throw new Error("Este TFM nao esta mais em andamento.");
+    if (!matriculaHost || matriculaHost !== String(linhasAbertas[0].valores[6] || "").trim()) {
+      throw new Error("Somente o host do TFM pode excluir lancamentos.");
+    }
+    if (linhasAbertas.length === 1) {
+      throw new Error("O ultimo lancamento mantem o TFM aberto e nao pode ser excluido. Cancele o TFM se ele foi criado por engano.");
+    }
+
+    const linhaExcluir = linhasAbertas.find((linha) => linha.numero === numeroLinha);
+    if (!linhaExcluir) throw new Error("Este lancamento nao pertence ao TFM informado.");
+
+    const matriculaAfetada = linhaExcluir.valores[8];
+    aba.deleteRow(numeroLinha);
+    invalidarCacheDesempenho([matriculaAfetada]);
+
+    return responderJson({ sucesso: true });
+  } catch (erro) {
+    return responderJson({ sucesso: false, erro: erro.message || "Erro ao excluir lancamento." });
+  } finally {
+    bloqueio.releaseLock();
   }
 }
 

@@ -78,5 +78,9 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Descarte de peças.",
     "Troca Óleo Motor.",
     "Teste de funcionamento dos injetores vazão e pressão",
-    "Retirada de bateria H.V"
+    "Retirada de bateria H.V",
+    "Trocar motor de partida DIESEL e 4x4",
+    "Troca chicote almoxarifado",
+    "Diagnose em motor na cela",
+    "Substituir tanque de combustível, tubos e coletor de admissão"
 ];

@@ -748,7 +748,10 @@ function renderizarEdicaoLancamentos(dados) {
             <div class="tfm-editar-lancamento-resumo">
                 <div><strong>${atividade}</strong><span>${registro.nome || "-"}${registro.matricula ? ` · ${registro.matricula}` : ""}</span></div>
                 <div class="tfm-editar-lancamento-dados"><span><i class="bi bi-calendar3"></i>${formatarData(registro.data)}</span><span><i class="bi bi-clock"></i>${formatarHoras(horas)}</span></div>
-                <button type="button" class="tfm-editar-lancamento-abrir" data-abrir-edicao-lancamento aria-label="Editar lançamento de ${atividade}" title="Editar lançamento"><i class="bi bi-pencil-square"></i></button>
+                <div class="tfm-editar-lancamento-acoes">
+                    <button type="button" class="tfm-editar-lancamento-abrir" data-abrir-edicao-lancamento aria-label="Editar lançamento de ${atividade}" title="Editar lançamento"><i class="bi bi-pencil-square"></i></button>
+                    <button type="button" class="tfm-editar-lancamento-excluir" data-excluir-lancamento aria-label="Excluir lançamento de ${atividade}" title="Excluir lançamento"><i class="bi bi-trash3"></i></button>
+                </div>
             </div>
             <div class="tfm-editar-lancamento-campos">
                 <label><span>Data trabalhada</span><input type="date" data-editar-data value="${normalizarDataInput(registro.data)}" readonly></label>
@@ -774,6 +777,30 @@ async function abrirEdicaoLancamentos(tfm) {
         renderizarEdicaoLancamentos(dados);
     } catch (erro) {
         mostrarFeedback(editarLancamentosFeedback, erro.message, "erro");
+    }
+}
+
+async function excluirLancamento(item) {
+    if (!tfmPendenteEdicao) return;
+    const atividade = item.querySelector(".tfm-editar-lancamento-resumo strong")?.textContent || "este lançamento";
+    const data = item.querySelector("[data-editar-data]")?.value || "";
+    if (!window.confirm(`Excluir ${atividade} de ${formatarData(data)}? Esta ação também apagará o lançamento do banco de dados.`)) return;
+
+    editarLancamentosFeedback.hidden = true;
+    const botoes = Array.from(item.querySelectorAll("button"));
+    botoes.forEach((botao) => { botao.disabled = true; });
+    try {
+        await enviarAcao({
+            acao: "excluirLancamentoTfmAberto",
+            tfm: tfmPendenteEdicao,
+            matriculaHost: usuarioAtual.matricula,
+            linha: Number(item.dataset.linha)
+        });
+        await abrirEdicaoLancamentos(tfmPendenteEdicao);
+        await carregarTfmsAbertos();
+    } catch (erro) {
+        mostrarFeedback(editarLancamentosFeedback, erro.message, "erro");
+        botoes.forEach((botao) => { botao.disabled = false; });
     }
 }
 
@@ -900,6 +927,12 @@ modalCancelarTfm.addEventListener("click", (event) => {
     if (event.target.matches("[data-fechar-modal-cancelar-tfm]")) fecharCancelamentoTfm();
 });
 editarLancamentosLista.addEventListener("click", (event) => {
+    const botaoExcluir = event.target.closest("[data-excluir-lancamento]");
+    if (botaoExcluir) {
+        excluirLancamento(botaoExcluir.closest(".tfm-editar-lancamento-item"));
+        return;
+    }
+
     const botao = event.target.closest("[data-abrir-edicao-lancamento]");
     if (!botao) return;
 
