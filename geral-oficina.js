@@ -1,0 +1,729 @@
+const LOGIN_CHAVE = "stellantisUsuarioLogado";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxghyPXviuoKUSM2Yf7cIPTI9XEiomzyQJ1Z-yllIEra-0fehMC9BLx1GAuu1EX5cL9/exec";
+
+const usuarioGeral = document.getElementById("usuario-geral");
+const usuarioGeralNome = document.getElementById("usuario-geral-nome");
+const btnAtualizarGeral = document.getElementById("btn-atualizar-geral");
+const oficinaStatus = document.getElementById("oficina-status");
+const oficinaDashboard = document.getElementById("oficina-dashboard");
+const resumoTotalHoras = document.getElementById("resumo-total-horas");
+const resumoHorasAndamento = document.getElementById("resumo-horas-andamento");
+const resumoTotalTfms = document.getElementById("resumo-total-tfms");
+const resumoTotalAtividades = document.getElementById("resumo-total-atividades");
+const resumoMaiorAtividade = document.getElementById("resumo-maior-atividade");
+const graficoPizza = document.getElementById("grafico-pizza");
+const pizzaTotal = document.getElementById("pizza-total");
+const pizzaLegenda = document.getElementById("pizza-legenda");
+const graficoColunas = document.getElementById("grafico-colunas");
+const colunasSubtitulo = document.getElementById("colunas-subtitulo");
+const modoGraficoBotoes = document.querySelectorAll("[data-modo-grafico]");
+const periodoInicio = document.getElementById("periodo-inicio");
+const periodoFim = document.getElementById("periodo-fim");
+const btnPeriodoTudo = document.getElementById("btn-periodo-tudo");
+const periodoInfo = document.getElementById("periodo-info");
+const calendarioPlanilha = document.getElementById("calendario-planilha");
+const geralMes = document.getElementById("geral-mes");
+const geralMesAnterior = document.getElementById("geral-mes-anterior");
+const geralMesSeguinte = document.getElementById("geral-mes-seguinte");
+const geralNavegacaoBotoes = document.querySelectorAll("[data-geral-view]");
+const geralVisoes = document.querySelectorAll("[data-geral-view-content]");
+const geralModoLateralBotoes = document.querySelectorAll("[data-geral-modo-lateral]");
+const geralSemanaPeriodo = document.getElementById("geral-semana-periodo");
+const geralCalendarioSemanal = document.getElementById("geral-calendario-semanal");
+const geralTopSubtitulo = document.getElementById("geral-top-subtitulo");
+const geralTopAtividades = document.getElementById("geral-top-atividades");
+const distribuicaoBusca = document.getElementById("distribuicao-busca");
+const distribuicaoLimpar = document.getElementById("distribuicao-limpar");
+const distribuicaoOpcoes = document.getElementById("distribuicao-opcoes");
+
+let atividadesGerais = [];
+let registrosGerais = [];
+let periodoCompleto = { inicio: "", fim: "" };
+let registrosExibidosGerais = [];
+let modoGrafico = "horas";
+let resizeTimer;
+let geralView = "geral";
+let distribuicaoAtividadeSelecionada = "";
+
+function normalizarBusca(valor) {
+    return String(valor || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function alterarGeralView(view) {
+    geralView = view;
+    geralNavegacaoBotoes.forEach((botao) => {
+        const ativo = botao.dataset.geralView === view;
+        botao.classList.toggle("geral-nav-ativo", ativo);
+        botao.setAttribute("aria-current", ativo ? "page" : "false");
+    });
+    geralVisoes.forEach((conteudo) => {
+        conteudo.hidden = conteudo.dataset.geralViewContent !== view;
+    });
+
+    if ((view === "atividades" || view === "distribuicao") && atividadesGerais.length) {
+        window.requestAnimationFrame(() => atualizarDashboardPorPeriodo());
+    }
+}
+
+function formatarHoras(valor) {
+    return `${Number(valor || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+    })}h`;
+}
+
+function obterLoginSalvo() {
+    try {
+        return JSON.parse(localStorage.getItem(LOGIN_CHAVE));
+    } catch (erro) {
+        return null;
+    }
+}
+
+function aplicarLoginSalvo() {
+    const loginSalvo = obterLoginSalvo();
+
+    if (!loginSalvo?.nome) {
+        return;
+    }
+
+    usuarioGeral.hidden = false;
+    usuarioGeralNome.textContent = loginSalvo.cadastroPendente ? `${loginSalvo.nome} (cadastro pendente)` : loginSalvo.nome;
+}
+
+function obterCorGrafico(index) {
+    return `var(--grafico-cor-${(index % 10) + 1})`;
+}
+
+function obterLimiteColunas() {
+    const larguraGrafico = graficoColunas.clientWidth || window.innerWidth;
+    const colunasQueCabem = Math.floor(larguraGrafico / 110);
+
+    return Math.min(10, Math.max(3, colunasQueCabem));
+}
+
+function normalizarDataInput(valor) {
+    if (!valor) {
+        return "";
+    }
+
+    if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
+        return valor.slice(0, 10);
+    }
+
+    const data = new Date(valor);
+
+    if (Number.isNaN(data.getTime())) {
+        return "";
+    }
+
+    return data.toISOString().slice(0, 10);
+}
+
+function criarDataLocal(valor) {
+    const [ano, mes, dia] = valor.split("-").map(Number);
+    return new Date(ano, mes - 1, dia);
+}
+
+function formatarData(valor) {
+    if (!valor) {
+        return "-";
+    }
+
+    const data = criarDataLocal(valor);
+    return data.toLocaleDateString("pt-BR");
+}
+
+function criarDatasPeriodo(inicio, fim) {
+    if (!inicio || !fim) {
+        return [];
+    }
+
+    const datas = [];
+    const atual = criarDataLocal(inicio);
+    const dataFim = criarDataLocal(fim);
+
+    while (atual <= dataFim) {
+        datas.push(atual.toISOString().slice(0, 10));
+        atual.setDate(atual.getDate() + 1);
+    }
+
+    return datas;
+}
+
+function formatarDataIso(data) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const dia = String(data.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+}
+
+function obterDatasSemana(valor) {
+    const data = criarDataLocal(valor);
+    data.setDate(data.getDate() - ((data.getDay() + 6) % 7));
+    const inicio = formatarDataIso(data);
+    data.setDate(data.getDate() + 6);
+    return criarDatasPeriodo(inicio, formatarDataIso(data));
+}
+
+function aplicarMesCalendario(valorMes) {
+    if (!valorMes) {
+        return;
+    }
+
+    const [ano, mes] = valorMes.split("-").map(Number);
+    const inicio = formatarDataIso(new Date(ano, mes - 1, 1));
+    const fim = formatarDataIso(new Date(ano, mes, 0));
+    periodoInicio.value = inicio;
+    periodoFim.value = fim;
+    atualizarDashboardPorPeriodo();
+}
+
+function alterarMesCalendario(deslocamento) {
+    const referencia = geralMes.value
+        ? criarDataLocal(`${geralMes.value}-01`)
+        : criarDataLocal(periodoCompleto.fim || formatarDataIso(new Date()));
+    referencia.setMonth(referencia.getMonth() + deslocamento);
+    geralMes.value = formatarDataIso(referencia).slice(0, 7);
+    aplicarMesCalendario(geralMes.value);
+}
+
+function obterValorIndicador(item) {
+    return modoGrafico === "tfms" ? item.tfms : item.horas;
+}
+
+function formatarIndicador(valor) {
+    if (modoGrafico === "tfms") {
+        return `${Number(valor || 0).toLocaleString("pt-BR")} TFM(s)`;
+    }
+
+    return formatarHoras(valor);
+}
+
+function obterNomeIndicador() {
+    return modoGrafico === "tfms" ? "TFM" : "Horas";
+}
+
+function ordenarAtividadesPorModo(atividades) {
+    return [...atividades].sort((primeira, segunda) => {
+        const diferenca = obterValorIndicador(segunda) - obterValorIndicador(primeira);
+        return diferenca || segunda.horas - primeira.horas || segunda.tfms - primeira.tfms;
+    });
+}
+
+function normalizarAtividades(atividades) {
+    return atividades
+        .map((item) => ({
+            atividade: item.atividade || "Atividade sem nome",
+            horas: Number(item.horas || 0),
+            tfms: Number(item.tfms || 0)
+        }))
+        .filter((item) => item.horas > 0 || item.tfms > 0)
+        .sort((primeira, segunda) => segunda.horas - primeira.horas);
+}
+
+function registroEstaEmAndamento(valor) {
+    return valor === true || String(valor).trim().toLowerCase() === "true";
+}
+
+function normalizarRegistros(registros) {
+    return registros
+        .map((item) => ({
+            data: normalizarDataInput(item.data),
+            atividade: item.atividade || "Atividade sem nome",
+            horas: Number(item.horas || 0),
+            tfm: String(item.tfm || "").trim(),
+            emAndamento: registroEstaEmAndamento(item.emAndamento)
+        }))
+        .filter((item) => item.data && (item.horas > 0 || item.tfm));
+}
+
+function obterPeriodoCompletoRegistros(registros) {
+    const datas = registros.map((item) => item.data).filter(Boolean).sort();
+
+    return {
+        inicio: datas[0] || "",
+        fim: datas[datas.length - 1] || ""
+    };
+}
+
+function obterRegistrosFiltrados() {
+    const inicio = periodoInicio.value;
+    const fim = periodoFim.value;
+
+    return registrosGerais.filter((registro) => {
+        if (inicio && registro.data < inicio) {
+            return false;
+        }
+
+        if (fim && registro.data > fim) {
+            return false;
+        }
+
+        return true;
+    });
+}
+
+function consolidarAtividadesRegistros(registros) {
+    const atividades = new Map();
+
+    registros.forEach((registro) => {
+        const atividade = registro.atividade || "Atividade sem nome";
+        const acumulado = atividades.get(atividade) || {
+            atividade,
+            horas: 0,
+            tfmsSet: new Set()
+        };
+
+        acumulado.horas += registro.horas;
+
+        if (registro.tfm) {
+            acumulado.tfmsSet.add(registro.tfm);
+        }
+
+        atividades.set(atividade, acumulado);
+    });
+
+    return [...atividades.values()]
+        .map((item) => ({
+            atividade: item.atividade,
+            horas: Number(item.horas.toFixed(2)),
+            tfms: item.tfmsSet.size
+        }))
+        .filter((item) => item.horas > 0 || item.tfms > 0);
+}
+
+function renderizarVisaoGeral(atividades) {
+    geralTopAtividades.innerHTML = "";
+    geralCalendarioSemanal.innerHTML = "";
+    const atividadesTop = ordenarAtividadesPorModo(atividades).slice(0, 5);
+    const maiorAtividade = Math.max(...atividadesTop.map((item) => obterValorIndicador(item)), 0);
+
+    geralTopSubtitulo.textContent = `Top 5 por ${obterNomeIndicador().toLowerCase()}`;
+    atividadesTop.forEach((item) => {
+        const linha = document.createElement("article");
+        const topo = document.createElement("div");
+        const nome = document.createElement("span");
+        const valor = document.createElement("strong");
+        const trilho = document.createElement("div");
+        const preenchimento = document.createElement("span");
+        const indicador = obterValorIndicador(item);
+
+        nome.textContent = item.atividade;
+        valor.textContent = formatarIndicador(indicador);
+        preenchimento.style.width = `${maiorAtividade ? Math.max(5, (indicador / maiorAtividade) * 100) : 0}%`;
+        topo.append(nome, valor);
+        trilho.appendChild(preenchimento);
+        linha.append(topo, trilho);
+        geralTopAtividades.appendChild(linha);
+    });
+
+    const ancora = periodoFim.value || periodoCompleto.fim || formatarDataIso(new Date());
+    const datasSemana = obterDatasSemana(ancora);
+    const registrosPorDia = new Map();
+    registrosGerais.forEach((registro) => {
+        const dia = registrosPorDia.get(registro.data) || { horas: 0, tfms: new Set() };
+        dia.horas += registro.horas;
+        if (registro.tfm) {
+            dia.tfms.add(registro.tfm);
+        }
+        registrosPorDia.set(registro.data, dia);
+    });
+    const valoresSemana = datasSemana.map((data) => {
+        const item = registrosPorDia.get(data) || { horas: 0, tfms: new Set() };
+        return { data, horas: item.horas, tfms: item.tfms.size };
+    });
+    const maiorDia = Math.max(...valoresSemana.map(obterValorIndicador), 0);
+
+    geralSemanaPeriodo.textContent = `${formatarData(datasSemana[0])} a ${formatarData(datasSemana[6])}`;
+    valoresSemana.forEach((item) => {
+        const dia = document.createElement("button");
+        const valor = obterValorIndicador(item);
+        const intensidade = maiorDia ? valor / maiorDia : 0;
+        dia.type = "button";
+        dia.className = `geral-semana-dia${valor > 0 ? "" : " geral-semana-dia-vazio"}`;
+        dia.style.setProperty("--intensidade-semana", (0.08 + intensidade * 0.32).toFixed(2));
+        dia.innerHTML = `<span>${criarDataLocal(item.data).toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")}</span><strong>${formatarData(item.data).slice(0, 5)}</strong><small>${valor > 0 ? formatarIndicador(valor) : "Sem registro"}</small>`;
+        dia.addEventListener("click", () => {
+            periodoInicio.value = item.data;
+            periodoFim.value = item.data;
+            atualizarDashboardPorPeriodo();
+            alterarGeralView("calendario");
+        });
+        geralCalendarioSemanal.appendChild(dia);
+    });
+}
+
+function atualizarResumo(atividades) {
+    const horasAndamento = registrosExibidosGerais
+        .filter((registro) => registro.emAndamento)
+        .reduce((total, registro) => total + registro.horas, 0);
+    const horasTrabalhadas = registrosExibidosGerais
+        .filter((registro) => !registro.emAndamento)
+        .reduce((total, registro) => total + registro.horas, 0);
+    const totalHoras = horasTrabalhadas + horasAndamento;
+    const totalTfms = atividades.reduce((total, item) => total + item.tfms, 0);
+    const atividadesOrdenadas = ordenarAtividadesPorModo(atividades);
+
+    resumoTotalHoras.textContent = formatarHoras(horasTrabalhadas);
+    resumoHorasAndamento.textContent = formatarHoras(horasAndamento);
+    resumoTotalTfms.textContent = totalTfms.toLocaleString("pt-BR");
+    resumoTotalAtividades.textContent = atividades.length.toLocaleString("pt-BR");
+    resumoMaiorAtividade.textContent = atividadesOrdenadas[0]?.atividade || "-";
+    pizzaTotal.textContent = formatarIndicador(modoGrafico === "tfms" ? totalTfms : totalHoras);
+
+    return modoGrafico === "tfms" ? totalTfms : totalHoras;
+}
+
+function renderizarPizza(atividades, totalIndicador) {
+    let cursorPercentual = 0;
+    pizzaTotal.textContent = formatarIndicador(totalIndicador);
+    const fatias = atividades.map((item, index) => {
+        const valorIndicador = obterValorIndicador(item);
+        const percentual = totalIndicador ? (valorIndicador / totalIndicador) * 100 : 0;
+        const inicio = cursorPercentual;
+        const fim = cursorPercentual + percentual;
+        cursorPercentual = fim;
+
+        return `${obterCorGrafico(index)} ${inicio}% ${fim}%`;
+    });
+
+    graficoPizza.style.background = fatias.length ? `conic-gradient(${fatias.join(", ")})` : "#edf4ff";
+    pizzaLegenda.innerHTML = "";
+
+    atividades.forEach((item, index) => {
+        const valorIndicador = obterValorIndicador(item);
+        const percentual = totalIndicador ? (valorIndicador / totalIndicador) * 100 : 0;
+        const legendaItem = document.createElement("article");
+        const marcador = document.createElement("span");
+        const nome = document.createElement("strong");
+        const valor = document.createElement("em");
+
+        marcador.style.background = obterCorGrafico(index);
+        nome.textContent = item.atividade;
+        valor.textContent = `${formatarIndicador(valorIndicador)} • ${percentual.toFixed(1).replace(".", ",")}%`;
+
+        legendaItem.appendChild(marcador);
+        legendaItem.appendChild(nome);
+        legendaItem.appendChild(valor);
+        pizzaLegenda.appendChild(legendaItem);
+    });
+}
+
+function fecharOpcoesDistribuicao() {
+    distribuicaoOpcoes.hidden = true;
+    distribuicaoBusca.setAttribute("aria-expanded", "false");
+}
+
+function renderizarOpcoesDistribuicao() {
+    const termo = normalizarBusca(distribuicaoBusca.value);
+    const atividades = ordenarAtividadesPorModo(consolidarAtividadesRegistros(obterRegistrosFiltrados()))
+        .filter((item) => normalizarBusca(item.atividade).includes(termo));
+
+    distribuicaoOpcoes.innerHTML = "";
+    const todas = document.createElement("button");
+    todas.type = "button";
+    todas.textContent = "Todas as atividades";
+    todas.setAttribute("role", "option");
+    todas.addEventListener("click", () => selecionarAtividadeDistribuicao(""));
+    distribuicaoOpcoes.appendChild(todas);
+
+    atividades.slice(0, 30).forEach((item) => {
+        const opcao = document.createElement("button");
+        opcao.type = "button";
+        opcao.textContent = item.atividade;
+        opcao.setAttribute("role", "option");
+        opcao.setAttribute("aria-selected", String(item.atividade === distribuicaoAtividadeSelecionada));
+        opcao.addEventListener("click", () => selecionarAtividadeDistribuicao(item.atividade));
+        distribuicaoOpcoes.appendChild(opcao);
+    });
+
+    distribuicaoOpcoes.hidden = false;
+    distribuicaoBusca.setAttribute("aria-expanded", "true");
+}
+
+function selecionarAtividadeDistribuicao(atividade) {
+    distribuicaoAtividadeSelecionada = atividade;
+    distribuicaoBusca.value = atividade;
+    distribuicaoBusca.placeholder = atividade || "Todas as atividades";
+    fecharOpcoesDistribuicao();
+    atualizarDashboardPorPeriodo();
+}
+
+function renderizarColunas(atividades) {
+    const limiteColunas = obterLimiteColunas();
+    const atividadesTop = atividades.slice(0, limiteColunas);
+    const maiorValor = Math.max(...atividadesTop.map((item) => obterValorIndicador(item)), 0);
+
+    colunasSubtitulo.textContent = `Top ${atividadesTop.length} por ${obterNomeIndicador()}`;
+    graficoColunas.innerHTML = "";
+
+    atividadesTop.forEach((item, index) => {
+        const coluna = document.createElement("article");
+        const valor = document.createElement("strong");
+        const barraWrap = document.createElement("div");
+        const barra = document.createElement("span");
+        const nome = document.createElement("em");
+        const valorIndicador = obterValorIndicador(item);
+        const altura = maiorValor ? Math.max(8, (valorIndicador / maiorValor) * 100) : 0;
+
+        coluna.className = "grafico-coluna";
+        coluna.style.setProperty("--cor-coluna", obterCorGrafico(index));
+        valor.textContent = formatarIndicador(valorIndicador);
+        barraWrap.className = "grafico-coluna-barra";
+        barra.style.height = `${Math.min(altura, 100)}%`;
+        nome.textContent = item.atividade;
+
+        barraWrap.appendChild(barra);
+        coluna.appendChild(valor);
+        coluna.appendChild(barraWrap);
+        coluna.appendChild(nome);
+        graficoColunas.appendChild(coluna);
+    });
+}
+
+function atualizarInfoPeriodo(totalRegistros, totalFiltrado) {
+    if (!periodoCompleto.inicio || !periodoCompleto.fim) {
+        periodoInfo.textContent = "O endpoint atual ainda não retornou datas da planilha.";
+        return;
+    }
+
+    const inicioSelecionado = periodoInicio.value || periodoCompleto.inicio;
+    const fimSelecionado = periodoFim.value || periodoCompleto.fim;
+    periodoInfo.textContent = `${totalFiltrado} de ${totalRegistros} registro(s), de ${formatarData(inicioSelecionado)} a ${formatarData(fimSelecionado)}.`;
+}
+
+function renderizarCalendario() {
+    calendarioPlanilha.innerHTML = "";
+
+    if (!periodoCompleto.inicio || !periodoCompleto.fim) {
+        const vazio = document.createElement("p");
+        vazio.className = "calendario-vazio";
+        vazio.textContent = "Sem datas para montar o calendário. Publique a versão atualizada do Apps Script para enviar as datas da planilha.";
+        calendarioPlanilha.appendChild(vazio);
+        return;
+    }
+
+    const totalPorDia = new Map();
+    registrosGerais.forEach((registro) => {
+        const dia = totalPorDia.get(registro.data) || { horas: 0, tfms: new Set() };
+        dia.horas += registro.horas;
+
+        if (registro.tfm) {
+            dia.tfms.add(registro.tfm);
+        }
+
+        totalPorDia.set(registro.data, dia);
+    });
+
+    const maiorValor = Math.max(...[...totalPorDia.values()].map((item) => (modoGrafico === "tfms" ? item.tfms.size : item.horas)), 0);
+    const mesSelecionado = geralMes.value || (periodoFim.value || periodoCompleto.fim).slice(0, 7);
+    const [anoMes, numeroMes] = mesSelecionado.split("-").map(Number);
+    const inicioSelecionado = formatarDataIso(new Date(anoMes, numeroMes - 1, 1));
+    const fimSelecionado = formatarDataIso(new Date(anoMes, numeroMes, 0));
+    geralMes.value = mesSelecionado;
+
+    const espacosInicio = (criarDataLocal(inicioSelecionado).getDay() + 6) % 7;
+    for (let indice = 0; indice < espacosInicio; indice += 1) {
+        const espaco = document.createElement("span");
+        espaco.className = "calendario-dia-espaco";
+        calendarioPlanilha.appendChild(espaco);
+    }
+
+    criarDatasPeriodo(inicioSelecionado, fimSelecionado).forEach((data) => {
+        const item = totalPorDia.get(data) || { horas: 0, tfms: new Set() };
+        const valor = modoGrafico === "tfms" ? item.tfms.size : item.horas;
+        const intensidade = maiorValor ? valor / maiorValor : 0;
+        const dia = document.createElement("button");
+
+        dia.type = "button";
+        dia.className = "calendario-dia";
+        dia.classList.toggle("calendario-dia-vazio", valor <= 0);
+        dia.classList.toggle("calendario-dia-ativo", data >= inicioSelecionado && data <= fimSelecionado);
+        dia.style.setProperty("--opacidade", (0.08 + intensidade * 0.36).toFixed(2));
+        dia.innerHTML = `<span>${formatarData(data).slice(0, 5)}</span><strong>${valor > 0 ? formatarIndicador(valor) : "-"}</strong>`;
+        dia.addEventListener("click", () => {
+            periodoInicio.value = data;
+            periodoFim.value = data;
+            atualizarDashboardPorPeriodo();
+            alterarGeralView("geral");
+            document.querySelector(".oficina-resumo").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        calendarioPlanilha.appendChild(dia);
+    });
+}
+
+function configurarPeriodoCompleto() {
+    periodoCompleto = obterPeriodoCompletoRegistros(registrosGerais);
+
+    periodoInicio.min = periodoCompleto.inicio || "";
+    periodoInicio.max = periodoCompleto.fim || "";
+    periodoFim.min = periodoCompleto.inicio || "";
+    periodoFim.max = periodoCompleto.fim || "";
+    periodoInicio.value = periodoCompleto.inicio || "";
+    periodoFim.value = periodoCompleto.fim || "";
+    geralMes.min = periodoCompleto.inicio ? periodoCompleto.inicio.slice(0, 7) : "";
+    geralMes.max = periodoCompleto.fim ? periodoCompleto.fim.slice(0, 7) : "";
+    geralMes.value = periodoCompleto.fim ? periodoCompleto.fim.slice(0, 7) : formatarDataIso(new Date()).slice(0, 7);
+}
+
+function atualizarDashboardPorPeriodo() {
+    if (registrosGerais.length) {
+        const registrosFiltrados = obterRegistrosFiltrados();
+        const atividadesFiltradas = consolidarAtividadesRegistros(registrosFiltrados);
+        registrosExibidosGerais = registrosFiltrados;
+        atualizarInfoPeriodo(registrosGerais.length, registrosFiltrados.length);
+        renderizarCalendario();
+        renderizarGraficos(atividadesFiltradas);
+        return;
+    }
+
+    atualizarInfoPeriodo(0, 0);
+    registrosExibidosGerais = [];
+    renderizarCalendario();
+    renderizarGraficos(atividadesGerais);
+}
+
+function renderizarGraficos(atividades) {
+    const atividadesOrdenadas = ordenarAtividadesPorModo(atividades);
+    const totalIndicador = atualizarResumo(atividades);
+    renderizarVisaoGeral(atividades);
+
+    if (!atividades.length) {
+        pizzaTotal.textContent = formatarIndicador(0);
+        graficoPizza.style.background = "#edf4ff";
+        pizzaLegenda.innerHTML = "";
+        graficoColunas.innerHTML = "";
+        colunasSubtitulo.textContent = `Top 0 por ${obterNomeIndicador()}`;
+        return;
+    }
+
+    const atividadesDistribuicao = distribuicaoAtividadeSelecionada
+        ? atividadesOrdenadas.filter((item) => item.atividade === distribuicaoAtividadeSelecionada)
+        : atividadesOrdenadas;
+    const totalDistribuicao = atividadesDistribuicao.reduce((total, item) => total + obterValorIndicador(item), 0);
+    renderizarPizza(atividadesDistribuicao, totalDistribuicao);
+    renderizarColunas(atividadesOrdenadas);
+}
+
+function renderizarDashboard(atividades) {
+    atividadesGerais = normalizarAtividades(atividades);
+
+    if (!atividadesGerais.length) {
+        oficinaDashboard.hidden = geralView === "geral";
+        oficinaStatus.hidden = false;
+        oficinaStatus.textContent = "Nenhum dado geral encontrado no banco de dados.";
+        return;
+    }
+
+    oficinaStatus.hidden = geralView !== "geral" || atividadesGerais.length > 0;
+    oficinaDashboard.hidden = false;
+    atualizarDashboardPorPeriodo();
+    alterarGeralView(geralView);
+}
+
+function atualizarModoGrafico(novoModo) {
+    modoGrafico = novoModo;
+    modoGraficoBotoes.forEach((botao) => {
+        botao.classList.toggle("oficina-modo-ativo", botao.dataset.modoGrafico === modoGrafico);
+    });
+    geralModoLateralBotoes.forEach((botao) => {
+        botao.classList.toggle("geral-modo-ativo", botao.dataset.geralModoLateral === modoGrafico);
+    });
+
+    if (atividadesGerais.length) {
+        atualizarDashboardPorPeriodo();
+    }
+}
+
+async function carregarGeralOficina() {
+    btnAtualizarGeral.disabled = true;
+    oficinaDashboard.hidden = geralView === "geral";
+    oficinaStatus.hidden = geralView !== "geral";
+    oficinaStatus.textContent = "Carregando dados gerais da oficina...";
+
+    const controleConsulta = new AbortController();
+    const timeoutConsulta = setTimeout(() => controleConsulta.abort(), 10000);
+
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=geralOficina`, {
+            signal: controleConsulta.signal
+        });
+
+        if (!resposta.ok) {
+            throw new Error("Erro ao consultar dados gerais da oficina.");
+        }
+
+        const dados = await resposta.json();
+
+        if (!dados.sucesso || !Array.isArray(dados.atividades)) {
+            throw new Error(dados.erro || "Erro ao carregar dados gerais da oficina.");
+        }
+
+        registrosGerais = normalizarRegistros(dados.registros || []);
+        configurarPeriodoCompleto();
+        renderizarDashboard(registrosGerais.length ? consolidarAtividadesRegistros(registrosGerais) : dados.atividades);
+        const totalCarregado = registrosGerais.length || atividadesGerais.length;
+        oficinaStatus.textContent = `${totalCarregado.toLocaleString("pt-BR")} dado(s) gerais da oficina carregado(s).`;
+    } catch (erro) {
+        oficinaStatus.hidden = false;
+        oficinaStatus.textContent = erro.name === "AbortError"
+            ? "A consulta geral da oficina demorou mais que o esperado. Tente atualizar novamente."
+            : "Não foi possível carregar o geral da oficina. Publique a versão atualizada do Apps Script e tente novamente.";
+        console.error(erro);
+    } finally {
+        clearTimeout(timeoutConsulta);
+        btnAtualizarGeral.disabled = false;
+    }
+}
+
+btnAtualizarGeral.addEventListener("click", carregarGeralOficina);
+btnPeriodoTudo.addEventListener("click", () => {
+    periodoInicio.value = periodoCompleto.inicio || "";
+    periodoFim.value = periodoCompleto.fim || "";
+    atualizarDashboardPorPeriodo();
+});
+geralMes.addEventListener("change", () => aplicarMesCalendario(geralMes.value));
+geralMesAnterior.addEventListener("click", () => alterarMesCalendario(-1));
+geralMesSeguinte.addEventListener("click", () => alterarMesCalendario(1));
+[periodoInicio, periodoFim].forEach((input) => {
+    input.addEventListener("change", atualizarDashboardPorPeriodo);
+});
+modoGraficoBotoes.forEach((botao) => {
+    botao.addEventListener("click", () => atualizarModoGrafico(botao.dataset.modoGrafico));
+});
+geralNavegacaoBotoes.forEach((botao) => {
+    botao.addEventListener("click", () => alterarGeralView(botao.dataset.geralView));
+});
+geralModoLateralBotoes.forEach((botao) => {
+    botao.addEventListener("click", () => atualizarModoGrafico(botao.dataset.geralModoLateral));
+});
+distribuicaoBusca.addEventListener("focus", renderizarOpcoesDistribuicao);
+distribuicaoBusca.addEventListener("input", renderizarOpcoesDistribuicao);
+distribuicaoBusca.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") {
+        fecharOpcoesDistribuicao();
+    }
+});
+distribuicaoLimpar.addEventListener("click", () => selecionarAtividadeDistribuicao(""));
+document.addEventListener("click", (evento) => {
+    if (!evento.target.closest(".distribuicao-combobox")) {
+        fecharOpcoesDistribuicao();
+    }
+});
+window.addEventListener("resize", () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+        if (atividadesGerais.length) {
+            renderizarColunas(ordenarAtividadesPorModo(atividadesGerais));
+        }
+    }, 120);
+});
+
+aplicarLoginSalvo();
+carregarGeralOficina();

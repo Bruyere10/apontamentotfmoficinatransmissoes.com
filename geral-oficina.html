@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geral da Oficina | Stellantis</title>
+    <meta name="description" content="Indicadores gerais da Oficina Transmissões por atividade, horas e TFMs.">
+    <meta name="theme-color" content="#001E62">
+    <link rel="icon" type="image/png" sizes="192x192" href="slogan-icon-192.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="stylesheet" href="geral-oficina.css">
+    <link rel="stylesheet" href="site-help.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+    <header class="oficina-header">
+        <div class="oficina-marca">
+            <img src="logo.png" class="logo" alt="Stellantis">
+            <div class="oficina-titulo">
+                <img src="slogan.png" class="oficina-motor-img" alt="">
+                <span>Oficina</span>
+                <strong>Transmissões</strong>
+            </div>
+        </div>
+
+        <div class="oficina-header-acoes">
+            <div id="usuario-geral" class="usuario-geral" hidden>
+                <i class="bi bi-person-check"></i>
+                <span id="usuario-geral-nome">-</span>
+            </div>
+            <a class="voltar-site" href="index.html">
+                <i class="bi bi-arrow-left"></i>
+                <span>Voltar</span>
+            </a>
+        </div>
+    </header>
+
+    <nav class="geral-navegacao" aria-label="Navegação do geral da oficina">
+        <span>Geral da oficina</span>
+        <button type="button" class="geral-nav-ativo" data-geral-view="geral">
+            <i class="bi bi-grid-1x2"></i>
+            <span>Visão geral</span>
+        </button>
+        <button type="button" data-geral-view="calendario">
+            <i class="bi bi-calendar3"></i>
+            <span>Calendário</span>
+        </button>
+        <button type="button" data-geral-view="atividades">
+            <i class="bi bi-bar-chart-line"></i>
+            <span>Atividades</span>
+        </button>
+        <button type="button" data-geral-view="distribuicao">
+            <i class="bi bi-pie-chart"></i>
+            <span>Distribuição</span>
+        </button>
+        <span class="geral-navegacao-secao">Indicador</span>
+        <div class="geral-navegacao-modo" aria-label="Indicador dos dados">
+            <button type="button" class="geral-modo-ativo" data-geral-modo-lateral="horas">Horas</button>
+            <button type="button" data-geral-modo-lateral="tfms">TFM</button>
+        </div>
+    </nav>
+
+    <main class="oficina-app">
+        <section class="oficina-hero" data-geral-view-content="geral" aria-labelledby="geral-oficina-titulo">
+            <div>
+                <span>Indicadores gerais</span>
+                <h1 id="geral-oficina-titulo">Geral da Oficina</h1>
+                <p>Resumo do banco de dados por atividade, horas trabalhadas e quantidade de TFMs.</p>
+            </div>
+
+            <div class="oficina-hero-acoes">
+                <div class="oficina-modo-abas" aria-label="Indicador dos gráficos">
+                    <button type="button" class="oficina-modo-ativo" data-modo-grafico="horas">Horas</button>
+                    <button type="button" data-modo-grafico="tfms">TFM</button>
+                </div>
+
+                <button type="button" id="btn-atualizar-geral" class="btn-atualizar-geral">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Atualizar dados</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="oficina-resumo oficina-resumo-geral" data-geral-view-content="geral" aria-label="Resumo geral da oficina">
+            <article>
+                <span>Horas trabalhadas</span>
+                <strong id="resumo-total-horas">0h</strong>
+            </article>
+            <article>
+                <span>Horas em andamento</span>
+                <strong id="resumo-horas-andamento">0h</strong>
+            </article>
+            <article>
+                <span>TFMs</span>
+                <strong id="resumo-total-tfms">0</strong>
+            </article>
+            <article>
+                <span>Atividades</span>
+                <strong id="resumo-total-atividades">0</strong>
+            </article>
+            <article>
+                <span>Maior atividade</span>
+                <strong id="resumo-maior-atividade">-</strong>
+            </article>
+        </section>
+
+        <p id="oficina-status" class="oficina-status" data-geral-view-content="geral">Carregando dados gerais da oficina...</p>
+
+        <section class="geral-visao-grid" data-geral-view-content="geral" aria-label="Destaques gerais da oficina">
+            <section class="grafico-card geral-semana-card" aria-labelledby="geral-semana-titulo">
+                <div class="grafico-card-topo">
+                    <div>
+                        <span>Semana mais recente</span>
+                        <h2 id="geral-semana-titulo">Calendário semanal</h2>
+                    </div>
+                    <strong id="geral-semana-periodo" class="geral-card-indicador">-</strong>
+                </div>
+                <div id="geral-calendario-semanal" class="geral-calendario-semanal" aria-label="Calendário semanal da oficina"></div>
+            </section>
+
+            <section class="grafico-card geral-top-card" aria-labelledby="geral-top-titulo">
+                <div class="grafico-card-topo">
+                    <div>
+                        <span id="geral-top-subtitulo">Top 5 por horas</span>
+                        <h2 id="geral-top-titulo">Atividades em destaque</h2>
+                    </div>
+                </div>
+                <div id="geral-top-atividades" class="geral-top-atividades"></div>
+            </section>
+        </section>
+
+        <section id="oficina-dashboard" class="oficina-dashboard" hidden>
+            <section class="grafico-card calendario-card" data-geral-view-content="calendario" hidden aria-labelledby="calendario-titulo">
+                <div class="grafico-card-topo calendario-topo">
+                    <div>
+                        <span>Segmentação por data</span>
+                        <h2 id="calendario-titulo">Calendário da planilha</h2>
+                    </div>
+
+                    <div class="calendario-segmentador" aria-label="Selecionar mês do calendário">
+                        <button type="button" id="geral-mes-anterior" title="Mês anterior" aria-label="Mês anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <label>
+                            <span>Mês de análise</span>
+                            <input id="geral-mes" type="month">
+                        </label>
+                        <button type="button" id="geral-mes-seguinte" title="Próximo mês" aria-label="Próximo mês">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="calendario-filtros-internos" aria-hidden="true">
+                        <label>
+                            <span>Data inicial</span>
+                            <input id="periodo-inicio" type="date">
+                        </label>
+                        <label>
+                            <span>Data final</span>
+                            <input id="periodo-fim" type="date">
+                        </label>
+                        <button type="button" id="btn-periodo-tudo">Tudo</button>
+                    </div>
+                </div>
+
+                <p id="periodo-info" class="periodo-info">Carregando período da planilha...</p>
+                <div class="calendario-semana-cabecalho" aria-hidden="true">
+                    <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
+                </div>
+                <div id="calendario-planilha" class="calendario-planilha" aria-label="Calendário com dias da planilha"></div>
+            </section>
+
+            <section class="grafico-card grafico-colunas-card" data-geral-view-content="atividades" hidden aria-labelledby="colunas-titulo">
+                <div class="grafico-card-topo">
+                    <div>
+                        <span id="colunas-subtitulo">Top 10</span>
+                        <h2 id="colunas-titulo">Maiores atividades</h2>
+                    </div>
+                </div>
+
+                <div id="grafico-colunas" class="grafico-colunas" aria-label="Gráfico de colunas com as maiores atividades"></div>
+            </section>
+
+            <section class="grafico-card grafico-pizza-card" data-geral-view-content="distribuicao" hidden aria-labelledby="pizza-titulo">
+                <div class="grafico-card-topo distribuicao-topo">
+                    <div>
+                        <span>Todos os dados</span>
+                        <h2 id="pizza-titulo">Distribuição por atividade</h2>
+                    </div>
+
+                    <div class="distribuicao-combobox">
+                        <label for="distribuicao-busca">Selecionar atividade</label>
+                        <div class="distribuicao-busca-wrap">
+                            <i class="bi bi-search"></i>
+                            <input id="distribuicao-busca" type="search" placeholder="Todas as atividades" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="distribuicao-opcoes">
+                            <button type="button" id="distribuicao-limpar" title="Mostrar todas as atividades" aria-label="Mostrar todas as atividades">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div id="distribuicao-opcoes" class="distribuicao-opcoes" role="listbox" hidden></div>
+                    </div>
+                </div>
+
+                <div class="pizza-layout">
+                    <div id="grafico-pizza" class="grafico-pizza" aria-label="Gráfico de pizza com todas as atividades">
+                        <div class="grafico-pizza-centro">
+                            <span>Total</span>
+                            <strong id="pizza-total">0h</strong>
+                        </div>
+                    </div>
+                    <div id="pizza-legenda" class="pizza-legenda"></div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="geral-oficina.js"></script>
+    <script src="site-help.js"></script>
+</body>
+
+</html>
