@@ -8,9 +8,9 @@
     <title>Registro de Atividades TFM | Stellantis</title>
     <meta name="description" content="Registro de atividades realizadas após a finalização do TFM.">
     <meta name="theme-color" content="#001E62">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="slogan-icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="slogan-icon-512.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="slogan-icon-192.png">
     <link rel="manifest" href="site.webmanifest">
 
     <link rel="stylesheet" href="style.css">
@@ -23,11 +23,11 @@
         <div class="header-inner">
             <img src="logo.png" class="logo" alt="Stellantis">
 
-            <div class="header-titulo-oficina" aria-label="Oficina Motores">
+            <div class="header-titulo-oficina" aria-label="Oficina Transmissões">
                 <img src="slogan.png" class="header-motor-img" alt="Motor">
                 <div class="header-titulo-texto">
                     <span>Oficina</span>
-                    <strong>Motores</strong>
+                    <strong>Transmissões</strong>
                 </div>
             </div>
             <div class="header-acoes">
@@ -171,7 +171,7 @@
                 <div class="login-hero-titulo">
                     <img class="login-motor-titulo" src="slogan.png" alt="">
                     <span>OFICINA</span>
-                    <strong>MOTORES</strong>
+                    <strong>TRANSMISSÕES</strong>
                 </div>
                 <p>Registro de TFM</p>
             </div>
@@ -494,7 +494,7 @@
                     <span>Geral da Oficina</span>
                 </a>
 
-                <a class="app-nav-btn" href="https://app.powerbi.com/links/DjYkARdlpJ?ctid=d852d5cd-724c-4128-8812-ffa5db3f8507&amp;pbi_source=linkShare" target="_blank" rel="noopener noreferrer" aria-label="Abrir BI da oficina em nova guia">
+                <a class="app-nav-btn" href="https://app.powerbi.com/links/DjYkARdlpJ?ctid=d852d5cd-724c-4128-8812-ffa5db3f8507&amp;pbi_source=linkShare" target="_blank" rel="noopener noreferrer" data-bi-em-obras aria-label="Abrir BI da oficina em nova guia">
                     <i class="bi bi-graph-up-arrow"></i>
                     <span>BI da oficina</span>
                 </a>
@@ -544,6 +544,16 @@
             </div>
 
             <div id="feedback-global" class="feedback-global" role="status" aria-live="polite" hidden></div>
+            <div id="bi-em-obras" class="bi-em-obras" role="status" aria-live="polite" hidden>
+                <i class="bi bi-cone-striped"></i>
+                <div>
+                    <strong>BI em construção</strong>
+                    <span>Estamos preparando este painel. Em breve ele estará disponível.</span>
+                </div>
+                <button type="button" aria-label="Fechar aviso do BI" data-fechar-bi-aviso>
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
 
             <div class="form-layout">
                 <div class="form-coluna form-coluna-esquerda">
@@ -601,36 +611,15 @@
                                     <div class="atividade-sugestoes" hidden></div>
 
                                     <select id="colaboradores-opcoes" hidden>
-                                   <option>Ailton Dos Reis Santana</option>
-<option>Airton Fonseca do Nascimento</option>
-<option>Albert de Almeida Libério</option>
-<option>Caio Resende Soares</option>
-<option>Cláudio Roberto Miranda</option>
-<option>Cleiton De Souza</option>
-<option>Ecelson Miranda</option>
-<option>Edilson Ribeiro de Andrade</option>
-<option>Fabio Henrique Alves Ventura</option>
-<option>Franklin de Jesus Souza</option>
-<option>Geraldo Marçal Paiva</option>
-<option>Gustavo da Silva Amaral</option>
-<option>João Paulo de Rezende Trindade</option>
-<option>José Edson Martins Coelho</option>
-<option>José Egídio Rocha</option>
-<option>José Roberto Souza Franco</option>
-<option>Leonel Barros Pereira Da Silva</option>
-<option>Paulo Roberto Ferreira</option>
-<option>Rafael da Silva Moreira</option>
-<option>Renato Basílio dos Santos Júnior</option>
-<option>Renato Fagner Foureaux</option>
-<option>Renis Mendes Goulart</option>
-<option>Ricardo da Silva Matos</option>
-<option>Roberto Carlos Vieira Martins</option>
-<option>Rodolfo Ribeiro Martins</option>
-<option>Romeu Malagoli dos Santos</option>
-<option>Sebastião Dirino Correia</option>
-<option>Sueimer Batista Pereira</option>
-<option>Valdemi Amancio Do Nascimento</option>
-<option>Wender Bortoloto da Costa</option>
+                                        <option>Anderson Parreiras</option>
+                                        <option>Alexandre Guimaraes</option>
+                                        <option>Davis Ribeiro</option>
+                                        <option>Mauricio Alves Marinho</option>
+                                        <option>Miguel Ângelo Soares</option>
+                                        <option>Rubens Hemogenes</option>
+                                        <option>Gustavo Zorzam Santos</option>
+                                        <option>Nathan Junio Morato</option>
+                                        <option>Caio Soares</option>
                                     </select>
                                 </div>
                             </div>
