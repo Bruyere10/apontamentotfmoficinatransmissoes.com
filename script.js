@@ -78,12 +78,13 @@ const atividadesDisponiveisLegado = [
     "Descarte de peças.",
     "Troca Óleo Motor.",
     "Teste de funcionamento dos injetores vazão e pressão",
+    "Teste de vazão e pressão dos injetores e troca",
     "Retirada de bateria H.V",
     "Trocar motor de partida DIESEL e 4x4",
     "Troca chicote almoxarifado",
     "Diagnose em motor na cela",
     "Substituir tanque de combustível, tubos e coletor de admissão"
-];
+].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
     : atividadesDisponiveisLegado;
