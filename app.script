@@ -3,6 +3,7 @@ const CONFIG = {
   nomeAba: "Página1",
   nomeAbaTfmsAbertos: "TFMs Abertos",
   nomeAbaDadosComplementares: "Dados Complementares",
+  nomeAbaCodigos: "Códigos",
   emailAnexosDestino: "SG49872@stellantis.com",
   assuntoEmailAnexos: "ANEXO_APONTAMENTO_TFM",
   linkPastaAnexos: "https://shiftup-my.sharepoint.com/:f:/g/personal/sg49872_stellantis_com/IgDxzGY1IAPwTYN1uhem8RKKAYlMmhuHFkPMGI7LKben0e4?e=HpeW7Y"
@@ -425,6 +426,10 @@ function doGet(evento) {
   try {
     const parametros = evento.parameter || {};
 
+    if (parametros.acao === "listarTemposPadrao") {
+      return responderJson({ sucesso: true, atividades: listarTemposPadrao() });
+    }
+
     if (parametros.acao === "resumoGeral") {
       return responderJson(buscarResumoGeral());
     }
@@ -499,6 +504,30 @@ function doGet(evento) {
       erro: erro.message || "Erro ao consultar TFM."
     });
   }
+}
+
+function listarTemposPadrao() {
+  const aba = obterArquivoPlanilha().getSheetByName(CONFIG.nomeAbaCodigos);
+
+  if (!aba || aba.getLastRow() < 2) {
+    return [];
+  }
+
+  const valores = aba.getDataRange().getValues();
+  const cabecalhos = valores[0];
+  const colunaCodigo = obterIndiceCabecalho(cabecalhos, ["Codigo", "Código"]);
+  const colunaAtividade = obterIndiceCabecalho(cabecalhos, ["Atividade"]);
+  const colunaTempoPadrao = obterIndiceCabecalho(cabecalhos, ["Tempo Padrao", "Tempo Padrão"]);
+
+  if (colunaAtividade < 0 || colunaTempoPadrao < 0) {
+    throw new Error("As colunas Atividade e Tempo Padrão não foram encontradas na aba Códigos.");
+  }
+
+  return valores.slice(1).map((linha) => ({
+    codigo: colunaCodigo >= 0 ? linha[colunaCodigo] : "",
+    atividade: String(linha[colunaAtividade] || "").trim(),
+    tempoPadrao: Number(linha[colunaTempoPadrao]) || 0
+  })).filter((item) => item.atividade);
 }
 
 function obterArquivoPlanilha() {

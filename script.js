@@ -141,6 +141,10 @@ const matriculaInput = document.getElementById("matricula");
 const modalAtividadeInput = document.getElementById("modal-atividade-input");
 const modalObservacaoInput = document.getElementById("modal-observacao-input");
 const modalHorasInput = document.getElementById("modal-horas-input");
+const modalTempoPadrao = document.getElementById("modal-tempo-padrao");
+const temposPadraoBusca = document.getElementById("tempos-padrao-busca");
+const temposPadraoLista = document.getElementById("tempos-padrao-lista");
+const temposPadraoStatus = document.getElementById("tempos-padrao-status");
 const modalColaboradorNomeInput = document.getElementById("modal-colaborador-nome");
 const modalColaboradorMatriculaInput = document.getElementById("modal-colaborador-matricula");
 const modalColaboradorDataInput = document.getElementById("modal-colaborador-data");
@@ -236,6 +240,8 @@ let lancamentosColaboradorModal = [];
 let documentosEmVerificacao = null;
 let salvamentoIntervalo = null;
 let consultaTfmIntervalo = null;
+let temposPadraoAtividades = [];
+let temposPadraoCarregados = false;
 const cacheConsultaTfms = new Map();
 let buscaEmLoteDisponivel = true;
 let tfmsAbertosCarregados = [];
@@ -275,10 +281,121 @@ const colaboradores = [
 const colaboradoresDisponiveis = colaboradores.map(({ nome }) => nome);
 
 function normalizarTexto(texto) {
-    return texto
+    return String(texto || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
+}
+
+function formatarTempoPadrao(valor) {
+    const numero = Number(valor);
+    if (valor === null || valor === undefined || valor === "" || !Number.isFinite(numero) || numero <= 0) {
+        return "Não informado";
+    }
+
+    return `${numero.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} h`;
+}
+
+function prepararTemposPadrao(dados) {
+    const recebidos = Array.isArray(dados) ? dados : [];
+    const porAtividade = new Map(recebidos.map((item) => [normalizarTexto(item.atividade), item]));
+
+    recebidos.forEach((item) => {
+        const atividade = String(item.atividade || "").trim();
+        if (atividade && !atividadesDisponiveis.some((existente) => normalizarTexto(existente) === normalizarTexto(atividade))) {
+            atividadesDisponiveis.push(atividade);
+        }
+    });
+    atividadesDisponiveis.sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
+
+    const catalogo = atividadesDisponiveis.map((atividade) => {
+        const item = porAtividade.get(normalizarTexto(atividade));
+        return {
+            codigo: item?.codigo ?? "-",
+            atividade,
+            tempoPadrao: item && item.tempoPadrao !== "" && item.tempoPadrao !== null
+                ? Number(item.tempoPadrao)
+                : null
+        };
+    });
+
+    recebidos.forEach((item) => {
+        if (!catalogo.some((catalogado) => normalizarTexto(catalogado.atividade) === normalizarTexto(item.atividade))) {
+            catalogo.push({ ...item, tempoPadrao: Number(item.tempoPadrao) });
+        }
+    });
+
+    temposPadraoAtividades = catalogo.sort((primeiro, segundo) => {
+        const codigoPrimeiro = Number(primeiro.codigo);
+        const codigoSegundo = Number(segundo.codigo);
+        if (Number.isFinite(codigoPrimeiro) && Number.isFinite(codigoSegundo)) return codigoPrimeiro - codigoSegundo;
+        if (Number.isFinite(codigoPrimeiro)) return -1;
+        if (Number.isFinite(codigoSegundo)) return 1;
+        return primeiro.atividade.localeCompare(segundo.atividade, "pt-BR");
+    });
+}
+
+function obterTempoPadrao(atividade) {
+    return temposPadraoAtividades.find((item) => normalizarTexto(item.atividade) === normalizarTexto(atividade))?.tempoPadrao ?? null;
+}
+
+function atualizarTempoPadraoInput(input, output = input.closest(".detalhes-item")?.querySelector(".tempo-padrao-resumo")) {
+    if (!output) return;
+    const atividade = input.value.trim();
+    output.textContent = atividade
+        ? `Tempo padrão: ${formatarTempoPadrao(obterTempoPadrao(atividade))}`
+        : "Tempo padrão: selecione uma atividade";
+}
+
+function renderizarTemposPadrao() {
+    if (!temposPadraoLista) return;
+    const busca = normalizarTexto(temposPadraoBusca?.value);
+    const filtrados = temposPadraoAtividades.filter((item) => normalizarTexto(item.atividade).includes(busca));
+    temposPadraoLista.innerHTML = "";
+
+    filtrados.forEach((item) => {
+        const linha = document.createElement("tr");
+        const codigo = document.createElement("td");
+        const atividade = document.createElement("td");
+        const tempo = document.createElement("td");
+        codigo.textContent = item.codigo;
+        atividade.textContent = item.atividade;
+        tempo.textContent = formatarTempoPadrao(item.tempoPadrao);
+        linha.append(codigo, atividade, tempo);
+        temposPadraoLista.appendChild(linha);
+    });
+
+    temposPadraoStatus.hidden = filtrados.length > 0;
+    temposPadraoStatus.textContent = temposPadraoAtividades.length
+        ? "Nenhuma atividade encontrada."
+        : "Nenhum tempo padrão foi encontrado.";
+}
+
+async function carregarTemposPadrao(forcarAtualizacao = false) {
+    if (temposPadraoCarregados && !forcarAtualizacao) return;
+    if (!temposPadraoCarregados) {
+        prepararTemposPadrao([]);
+        renderizarTemposPadrao();
+    }
+
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=listarTemposPadrao&_=${Date.now()}`);
+        const dados = await resposta.json();
+        if (!resposta.ok || !dados.sucesso || !Array.isArray(dados.atividades)) {
+            throw new Error(dados.erro || "Não foi possível carregar os tempos padrão.");
+        }
+        prepararTemposPadrao(dados.atividades);
+        temposPadraoCarregados = true;
+        renderizarTemposPadrao();
+        document.querySelectorAll(".detalhes-item .atividade-input").forEach((input) => atualizarTempoPadraoInput(input));
+        atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao);
+    } catch (erro) {
+        if (temposPadraoStatus) {
+            temposPadraoStatus.hidden = false;
+            temposPadraoStatus.textContent = "Não foi possível carregar os tempos padrão. Publique a versão atualizada do Apps Script e tente novamente.";
+        }
+        console.error(erro);
+    }
 }
 
 function fecharSugestoes() {
@@ -1348,7 +1465,7 @@ function criarDetalhesItem(indice) {
 
             <input id="atividade-${indice}" name="atividade[]" type="hidden" class="atividade-input" required>
             <input id="horas-${indice}" name="horas[]" type="hidden" class="horas-input" required>
-            <input id="observacao-${indice}" name="observacao[]" type="hidden" class="observacao-input">
+            <input id="observacao-${indice}" name="observacao[]" type="hidden" class="observacao-input" required>
         `;
 
         return novoDetalhe;
@@ -1359,6 +1476,7 @@ function criarDetalhesItem(indice) {
             <span class="bloco-numero">${numeroFormatado}</span>
             <div class="bloco-cabecalho-titulo">
                 <strong>Atividade realizada ${indice}</strong>
+                <span class="tempo-padrao-resumo">Tempo padrão: selecione uma atividade</span>
             </div>
             <button type="button" class="btn-remover-atividade" aria-label="Remover atividade ${indice}">
                 <i class="bi bi-trash3"></i>
@@ -1389,7 +1507,7 @@ function criarDetalhesItem(indice) {
                 <label for="observacao-${indice}">Observação da atividade ${indice}</label>
                 <div class="input-icon input-textarea">
                     <i class="bi bi-chat-left-text"></i>
-                    <textarea id="observacao-${indice}" name="observacao[]" rows="3" class="observacao-input" placeholder="Digite alguma observação sobre a atividade"></textarea>
+                    <textarea id="observacao-${indice}" name="observacao[]" rows="3" class="observacao-input" placeholder="Digite alguma observação sobre a atividade" required></textarea>
                 </div>
             </div>
 
@@ -1409,6 +1527,7 @@ function atualizarResumoAtividadeItem(item) {
     }
 
     resumo.textContent = horas ? `${atividade} - ${horas}h` : atividade;
+    atualizarTempoPadraoInput(item.querySelector(".atividade-input"));
 }
 
 function converterArquivoParaBase64(arquivo) {
@@ -1640,6 +1759,7 @@ function abrirModalAtividade(item = null) {
     modalAtividadeInput.value = item?.querySelector(".atividade-input")?.value || "";
     modalObservacaoInput.value = item?.querySelector(".observacao-input")?.value || "";
     modalHorasInput.value = item?.querySelector(".horas-input")?.value || "";
+    atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao);
     document.getElementById("modal-atividade-titulo").textContent = item ? "Editar atividade" : "Adicionar outra atividade";
     btnConfirmarAtividade.querySelector("span").textContent = item ? "Salvar alterações" : "Adicionar atividade";
     modalAtividade.hidden = false;
@@ -1653,6 +1773,7 @@ function fecharModalAtividade() {
     modalAtividadeInput.value = "";
     modalObservacaoInput.value = "";
     modalHorasInput.value = "";
+    atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao);
     document.getElementById("modal-atividade-titulo").textContent = "Adicionar outra atividade";
     btnConfirmarAtividade.querySelector("span").textContent = "Adicionar atividade";
     marcarCampo(modalAtividadeInput, false);
@@ -1721,12 +1842,14 @@ function adicionarAtividadeDoModal() {
     const atividade = modalAtividadeInput.value.trim();
     const horas = normalizarHoras(modalHorasInput.value);
     const horasNumero = Number(horas);
+    const observacao = modalObservacaoInput.value.trim();
 
     marcarCampo(modalAtividadeInput, !atividade);
     marcarCampo(modalHorasInput, !horasNumero || horasNumero <= 0, "Informe as horas da atividade.");
+    marcarCampo(modalObservacaoInput, !observacao, "Informe uma observação sobre a atividade.");
 
-    if (!atividade || !horasNumero || horasNumero <= 0) {
-        mostrarFeedback("Informe atividade e horas antes de adicionar.", "erro");
+    if (!atividade || !horasNumero || horasNumero <= 0 || !observacao) {
+        mostrarFeedback("Informe atividade, horas e observação antes de adicionar.", "erro");
         return;
     }
 
@@ -1737,7 +1860,7 @@ function adicionarAtividadeDoModal() {
     const item = atividadeEmEdicao || criarDetalhesItem(document.querySelectorAll(".detalhes-item").length + 1);
 
     item.querySelector(".atividade-input").value = atividade;
-    item.querySelector(".observacao-input").value = modalObservacaoInput.value.trim();
+    item.querySelector(".observacao-input").value = observacao;
     item.querySelector(".horas-input").value = horas;
 
     if (!atividadeEmEdicao) {
@@ -1973,9 +2096,10 @@ async function carregarTfmsAbertos() {
 async function adicionarHorasAoTfm(event) {
     event.preventDefault();
     const horas = converterHorasNumero(horasTfmQuantidade.value);
+    const observacao = horasTfmObservacao.value.trim();
 
-    if (!horasTfmData.value || !horasTfmAtividade.value.trim() || horas <= 0) {
-        mostrarFeedbackPainel(horasTfmFeedback, "Preencha o dia, a atividade e as horas trabalhadas.", "erro");
+    if (!horasTfmData.value || !horasTfmAtividade.value.trim() || horas <= 0 || !observacao) {
+        mostrarFeedbackPainel(horasTfmFeedback, "Preencha o dia, a atividade, as horas trabalhadas e a observação.", "erro");
         return;
     }
 
@@ -1988,7 +2112,7 @@ async function adicionarHorasAoTfm(event) {
             dataTrabalhada: horasTfmData.value,
             atividade: horasTfmAtividade.value.trim(),
             horas,
-            observacao: horasTfmObservacao.value.trim(),
+            observacao,
             nomeColaborador: usuarioAtual.nome,
             matriculaColaborador: usuarioAtual.matricula
         });
@@ -2810,9 +2934,9 @@ async function enviarSugestaoAtividade() {
     const nomeColaborador = (usuarioAtual?.nome || document.getElementById("nome").value).trim();
     const matriculaColaborador = (usuarioAtual?.matricula || matriculaInput.value).trim();
 
-    if (atividade.length < 3) {
-        mostrarFeedback("Digite uma atividade sugerida antes de enviar.", "erro");
-        sugestaoAtividadeInput.focus();
+    if (atividade.length < 3 || !observacao) {
+        mostrarFeedback("Digite a atividade sugerida e uma observação antes de enviar.", "erro");
+        (atividade.length < 3 ? sugestaoAtividadeInput : sugestaoObservacaoInput).focus();
         return;
     }
 
@@ -2869,9 +2993,9 @@ async function enviarFeedbackColaborador() {
     const nomeColaborador = (usuarioAtual?.nome || document.getElementById("nome").value).trim();
     const matriculaColaborador = (usuarioAtual?.matricula || matriculaInput.value).trim();
 
-    if (feedback.length < 3) {
-        mostrarFeedback("Digite sua sugestão, ideia ou reclamação antes de enviar.", "erro");
-        feedbackTextoInput.focus();
+    if (feedback.length < 3 || !observacao) {
+        mostrarFeedback("Digite o feedback e uma observação antes de enviar.", "erro");
+        (feedback.length < 3 ? feedbackTextoInput : feedbackObservacaoInput).focus();
         return;
     }
 
@@ -2999,6 +3123,18 @@ function validarFormulario() {
     for (const atividadeInput of document.querySelectorAll(".detalhes-item .atividade-input")) {
         if (!validarAtividadeCadastrada(atividadeInput)) {
             mostrarAvisoAtividadeNaoCadastrada(atividadeInput.value);
+            return false;
+        }
+
+        const observacaoInput = atividadeInput.closest(".detalhes-item")?.querySelector(".observacao-input");
+        if (!observacaoInput?.value.trim()) {
+            marcarCampo(observacaoInput, true, "Informe uma observação sobre a atividade.");
+            mostrarFeedback("Todas as atividades precisam de observação.", "erro");
+            if (observacaoInput.type === "hidden") {
+                abrirModalAtividade(atividadeInput.closest(".detalhes-item"));
+            } else {
+                observacaoInput.focus();
+            }
             return false;
         }
     }
@@ -3219,8 +3355,8 @@ async function salvarApontamentoConfirmado() {
     }
 }
 
-document.querySelectorAll(".atividade-input").forEach((input) => configurarAutocomplete(input, atividadesDisponiveis));
-configurarAutocomplete(modalAtividadeInput, atividadesDisponiveis);
+document.querySelectorAll(".atividade-input").forEach((input) => configurarAutocomplete(input, atividadesDisponiveis, () => atualizarTempoPadraoInput(input), () => atualizarTempoPadraoInput(input)));
+configurarAutocomplete(modalAtividadeInput, atividadesDisponiveis, () => atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao), () => atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao));
 configurarAutocomplete(modalColaboradorNomeInput, colaboradoresDisponiveis, atualizarMatriculaModalColaborador, atualizarMatriculaModalColaborador);
 document.querySelectorAll(".colaborador-input").forEach((input) => configurarAutocomplete(input, colaboradoresDisponiveis, atualizarMatriculaPorNome, atualizarMatriculaPorNome));
 configurarAutocomplete(loginNomeInput, colaboradoresDisponiveis, atualizarMatriculaLoginPorNome, atualizarMatriculaLoginPorNome);
@@ -3297,6 +3433,9 @@ document.querySelectorAll(".app-nav-btn[data-app-tab]").forEach((botao) => {
         alternarAppTab(botao.dataset.appTab);
     });
 });
+
+temposPadraoBusca?.addEventListener("input", renderizarTemposPadrao);
+window.addEventListener("focus", () => carregarTemposPadrao(true));
 
 document.querySelectorAll("[data-tfm-aberto-view]").forEach((botao) => {
     botao.addEventListener("click", () => alternarTfmAbertoView(botao.dataset.tfmAbertoView));
@@ -3642,6 +3781,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 configurarDataAtual();
+carregarTemposPadrao();
 renderizarHistorico();
 carregarResumoPlanilha();
 carregarHistoricoPlanilha();

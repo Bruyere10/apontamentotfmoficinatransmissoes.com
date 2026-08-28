@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempo Padrão | Stellantis</title>
+    <meta name="description" content="Consulta dos tempos padrão das atividades da Oficina Motores.">
+    <meta name="theme-color" content="#001E62">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="stylesheet" href="geral-oficina.css">
+    <link rel="stylesheet" href="tempo-padrao.css?v=20260828-2">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <header class="oficina-header">
+        <div class="oficina-marca">
+            <img src="logo.png" class="logo" alt="Stellantis">
+            <div class="oficina-titulo">
+                <span>Oficina</span>
+                <strong>Motores</strong>
+            </div>
+        </div>
+        <div class="oficina-header-acoes">
+            <div id="usuario-tempo-padrao" class="usuario-geral" hidden>
+                <i class="bi bi-person-check"></i>
+                <span id="usuario-tempo-padrao-nome">-</span>
+            </div>
+            <a class="voltar-site" href="index.html">
+                <i class="bi bi-arrow-left"></i>
+                <span>Voltar</span>
+            </a>
+        </div>
+    </header>
+
+    <nav class="geral-navegacao tempo-padrao-navegacao" aria-label="Navegação de tempo padrão">
+        <span>Referência</span>
+        <a class="tempo-padrao-nav-ativo" href="tempo-padrao.html" aria-current="page">
+            <i class="bi bi-stopwatch"></i>
+            <span>Tempo Padrão</span>
+        </a>
+    </nav>
+
+    <main class="oficina-app tempo-padrao-app">
+        <section class="oficina-hero tempo-padrao-hero" aria-labelledby="tempo-padrao-titulo">
+            <div>
+                <span>Referência de atividades</span>
+                <h1 id="tempo-padrao-titulo">Tempo Padrão</h1>
+                <p>Consulte o tempo padrão definido no banco de dados para cada atividade cadastrada.</p>
+            </div>
+        </section>
+
+        <section class="grafico-card tempo-padrao-card" aria-labelledby="lista-tempos-titulo">
+            <div class="tempo-padrao-card-topo">
+                <div>
+                    <span>Catálogo completo</span>
+                    <h2 id="lista-tempos-titulo">Atividades e tempos padrão</h2>
+                </div>
+                <div class="tempo-padrao-card-acoes">
+                    <strong id="tempo-padrao-contagem" aria-live="polite">0 atividades</strong>
+                    <button id="tempo-padrao-atualizar" type="button" title="Atualizar tempos padrão">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+            </div>
+
+            <label class="tempo-padrao-busca" for="tempo-padrao-busca">
+                <span>Pesquisar atividade</span>
+                <div>
+                    <i class="bi bi-search"></i>
+                    <input id="tempo-padrao-busca" type="search" placeholder="Digite o nome ou o código" autocomplete="off">
+                    <button id="tempo-padrao-limpar" type="button" aria-label="Limpar pesquisa" title="Limpar pesquisa" hidden>
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </label>
+
+            <p id="tempo-padrao-status" class="tempo-padrao-status" role="status" aria-live="polite">Carregando atividades...</p>
+
+            <div class="tempo-padrao-tabela-wrapper">
+                <table class="tempo-padrao-tabela">
+                    <thead>
+                        <tr><th scope="col">Código</th><th scope="col">Atividade</th><th scope="col">Tempo Padrão</th></tr>
+                    </thead>
+                    <tbody id="tempo-padrao-lista"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="tempo-padrao.js?v=20260828-2"></script>
+</body>
+</html>

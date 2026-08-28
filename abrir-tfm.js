@@ -123,6 +123,22 @@ function atividadeValida(valor) {
     return atividadesDisponiveis.some((atividade) => normalizarTexto(atividade) === normalizado);
 }
 
+async function carregarAtividadesDisponiveis() {
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=listarTemposPadrao&_=${Date.now()}`);
+        const dados = await resposta.json();
+        if (!resposta.ok || !dados.sucesso || !Array.isArray(dados.atividades)) return;
+
+        dados.atividades.forEach((item) => {
+            const atividade = String(item.atividade || "").trim();
+            if (atividade && !atividadeValida(atividade)) atividadesDisponiveis.push(atividade);
+        });
+        atividadesDisponiveis.sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
+    } catch (erro) {
+        console.error("Não foi possível atualizar a lista de atividades.", erro);
+    }
+}
+
 function configurarBuscaAtividade(input, lista) {
     let indiceAtivo = -1;
 
@@ -467,6 +483,7 @@ async function abrirNovoTfm(event) {
     const tfm = abertoTfm.value.trim();
     const atividade = abertoAtividade.value.trim();
     const horas = converterHorasNumero(abertoHoras.value);
+    const observacao = abertoObservacao.value.trim();
 
     if (!atividadeValida(atividade)) {
         mostrarFeedback(abertoFeedback, "Esta atividade não consta na lista cadastrada e não pode ser salva. Caso seja necessária, registre uma sugestão em Sugerir atividade.", "erro");
@@ -474,8 +491,8 @@ async function abrirNovoTfm(event) {
         return;
     }
 
-    if (!/^\d{6}$/.test(tfm) || !abertoDataInicial.value || !abertoTurno.value || horas <= 0) {
-        mostrarFeedback(abertoFeedback, "Preencha data inicial, turno, TFM, atividade e horas trabalhadas.", "erro");
+    if (!/^\d{6}$/.test(tfm) || !abertoDataInicial.value || !abertoTurno.value || horas <= 0 || !observacao) {
+        mostrarFeedback(abertoFeedback, "Preencha data inicial, turno, TFM, atividade, horas trabalhadas e observação.", "erro");
         return;
     }
 
@@ -493,7 +510,7 @@ async function abrirNovoTfm(event) {
             colaboradoresAutorizados,
             atividade,
             horas,
-            observacao: abertoObservacao.value.trim(),
+            observacao,
             documentos: await prepararDocumentos()
         });
         formAbrirTfm.reset();
@@ -615,16 +632,17 @@ function adicionarAtividadeExtra(event) {
     event.preventDefault();
     const atividade = atividadeHorasNome.value.trim();
     const horas = converterHorasNumero(atividadeHorasQuantidade.value);
+    const observacao = atividadeHorasObservacao.value.trim();
 
-    if (!atividadeValida(atividade) || horas <= 0) {
-        mostrarFeedback(atividadeHorasFeedback, "Selecione uma atividade da lista e informe as horas trabalhadas.", "erro");
+    if (!atividadeValida(atividade) || horas <= 0 || !observacao) {
+        mostrarFeedback(atividadeHorasFeedback, "Selecione uma atividade e informe as horas trabalhadas e a observação.", "erro");
         return;
     }
 
     atividadesExtrasLancamento.push({
         atividade,
         horas,
-        observacao: atividadeHorasObservacao.value.trim()
+        observacao
     });
     renderizarAtividadesExtras();
     fecharModalAtividadeHoras();
@@ -703,15 +721,16 @@ async function carregarTfmsAbertos() {
 async function adicionarHoras(event) {
     event.preventDefault();
     const horas = converterHorasNumero(horasTfmQuantidade.value);
+    const observacao = horasTfmObservacao.value.trim();
     const registro = tfmsAbertosCarregados.find((item) => item.tfm === horasTfmId.value);
     const atividades = [{
         atividade: registro?.atividade || "",
         horas,
-        observacao: horasTfmObservacao.value.trim()
+        observacao
     }, ...atividadesExtrasLancamento];
 
-    if (!horasTfmData.value || horas <= 0 || !registro?.atividade) {
-        mostrarFeedback(horasTfmFeedback, "Preencha a data e as horas trabalhadas.", "erro");
+    if (!horasTfmData.value || horas <= 0 || !registro?.atividade || !observacao) {
+        mostrarFeedback(horasTfmFeedback, "Preencha a data, as horas trabalhadas e a observação.", "erro");
         return;
     }
 
@@ -965,11 +984,14 @@ async function confirmarFinalizacaoTfm() {
 
 if (aplicarLogin()) {
     abertoDataInicial.value = new Date().toISOString().slice(0, 10);
+    carregarAtividadesDisponiveis();
     configurarBuscaAtividade(abertoAtividade, abertoAtividadeOpcoes);
     configurarBuscaAtividade(atividadeHorasNome, atividadeHorasOpcoes);
     configurarBuscaColaborador();
     configurarBuscaAutorizados();
 }
+
+window.addEventListener("focus", carregarAtividadesDisponiveis);
 
 document.querySelectorAll("[data-tfm-view]").forEach((botao) => {
     botao.addEventListener("click", () => alternarView(botao.dataset.tfmView));

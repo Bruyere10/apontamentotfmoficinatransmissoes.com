@@ -1912,6 +1912,100 @@ body.login-bloqueado::after{
     padding:5px 8px;
 }
 
+.bloco-cabecalho-titulo .tempo-padrao-resumo{
+    background:#e8f7ef;
+    color:#17643a;
+    line-height:1.3;
+    overflow-wrap:anywhere;
+}
+
+.tempo-padrao-valor{
+    align-items:center;
+    background:#e8f7ef;
+    border:1px solid #acd9bf;
+    border-radius:8px;
+    color:#17643a;
+    display:flex;
+    font-size:15px;
+    font-weight:800;
+    min-height:48px;
+    padding:0 14px;
+}
+
+.tempos-padrao-card{
+    margin-bottom:0;
+}
+
+.tempos-padrao-busca{
+    margin-bottom:16px;
+    max-width:560px;
+}
+
+.tempos-padrao-status{
+    background:#f3f7fd;
+    border:1px dashed #b7c8ea;
+    border-radius:8px;
+    color:var(--stellantis-muted);
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:14px;
+    padding:14px;
+}
+
+.tempos-padrao-status[hidden]{
+    display:none;
+}
+
+.tempos-padrao-tabela-wrapper{
+    border:1px solid #dce5f2;
+    border-radius:8px;
+    max-height:620px;
+    overflow:auto;
+}
+
+.tempos-padrao-tabela{
+    border-collapse:collapse;
+    min-width:680px;
+    width:100%;
+}
+
+.tempos-padrao-tabela th,
+.tempos-padrao-tabela td{
+    border-bottom:1px solid #dce5f2;
+    padding:12px 14px;
+    text-align:left;
+}
+
+.tempos-padrao-tabela th{
+    background:#e8f1ff;
+    color:var(--stellantis-blue);
+    font-size:13px;
+    position:sticky;
+    top:0;
+    z-index:1;
+}
+
+.tempos-padrao-tabela td{
+    color:var(--stellantis-ink);
+    font-size:14px;
+}
+
+.tempos-padrao-tabela td:first-child{
+    text-align:center;
+    width:90px;
+}
+
+.tempos-padrao-tabela td:last-child{
+    color:#17643a;
+    font-weight:800;
+    white-space:nowrap;
+    width:160px;
+}
+
+.tempos-padrao-tabela tbody tr:nth-child(even){
+    background:#f7faf5;
+}
+
 .bloco-numero{
     align-items:center;
     background:var(--stellantis-blue);
@@ -4508,6 +4602,44 @@ select{
 }
 
 @media(max-width:768px){
+
+    .app-shell{
+        display:block;
+    }
+
+    .app-sidebar{
+        border-left:1px solid rgba(255,255,255,0.16);
+        border-top:4px solid var(--stellantis-cyan);
+        border-radius:9px;
+        display:flex;
+        margin-bottom:14px;
+        overflow-x:auto;
+        padding:8px;
+        position:static;
+        scrollbar-width:thin;
+    }
+
+    .app-sidebar::before{
+        display:none;
+    }
+
+    .app-nav-btn{
+        flex:0 0 168px;
+        min-height:44px;
+        padding:8px 10px;
+        transform:none;
+        width:auto;
+    }
+
+    .app-nav-btn:hover,
+    .app-nav-btn:focus,
+    .app-nav-btn-ativo{
+        transform:none;
+    }
+
+    .app-conteudo{
+        padding:12px;
+    }
 
     .topo-registro,
     .form-layout{

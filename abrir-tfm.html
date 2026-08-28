@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="manifest" href="site.webmanifest">
     <link rel="stylesheet" href="geral-oficina.css">
-    <link rel="stylesheet" href="abrir-tfm.css">
+    <link rel="stylesheet" href="abrir-tfm.css?v=20260828-1">
     <link rel="stylesheet" href="site-help.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
@@ -95,7 +95,7 @@
                         <div class="tfm-form-grupo-campos">
                             <label class="tfm-campo-inteiro"><span>Atividade realizada</span><div class="tfm-atividade-combobox"><i class="bi bi-search"></i><input id="aberto-atividade" type="search" placeholder="Pesquisar atividade" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="aberto-atividade-opcoes" aria-autocomplete="list" required><div id="aberto-atividade-opcoes" class="tfm-atividade-opcoes" role="listbox" hidden></div></div></label>
                             <label><span>Horas trabalhadas</span><input id="aberto-horas" type="text" inputmode="decimal" placeholder="Ex: 7.5" required></label>
-                            <label class="tfm-campo-inteiro"><span>Observação <small>Opcional</small></span><textarea id="aberto-observacao" rows="3" placeholder="Inclua uma informação relevante, se necessário"></textarea></label>
+                            <label class="tfm-campo-inteiro"><span>Observação</span><textarea id="aberto-observacao" rows="3" placeholder="Inclua uma informação relevante" required></textarea></label>
                         </div>
                     </section>
 
@@ -187,8 +187,8 @@
                         </button>
                     </section>
                     <section class="tfm-lancamento-secao tfm-lancamento-observacao">
-                        <div class="tfm-campo-titulo"><span>Observação <small>(opcional)</small></span><small>Inclua uma informação relevante sobre o lançamento, se necessário.</small></div>
-                        <textarea id="horas-tfm-observacao" rows="3" placeholder="Adicionar observação"></textarea>
+                        <div class="tfm-campo-titulo"><span>Observação</span><small>Inclua uma informação relevante sobre o lançamento.</small></div>
+                        <textarea id="horas-tfm-observacao" rows="3" placeholder="Adicionar observação" required></textarea>
                     </section>
                     <section class="tfm-lancamento-secao tfm-atividades-extras">
                         <div class="tfm-campo-titulo">
@@ -238,8 +238,8 @@
                         <input id="atividade-horas-quantidade" type="text" inputmode="decimal" placeholder="Ex: 1.5">
                     </label>
                     <label class="tfm-campo-inteiro">
-                        <span>Observação <small>(opcional)</small></span>
-                        <textarea id="atividade-horas-observacao" rows="3" placeholder="Opcional"></textarea>
+                        <span>Observação</span>
+                        <textarea id="atividade-horas-observacao" rows="3" placeholder="Adicionar observação" required></textarea>
                     </label>
                 </div>
                 <div id="atividade-horas-feedback" class="tfm-feedback" role="status" aria-live="polite" hidden></div>
@@ -370,8 +370,8 @@
         </section>
     </div>
 
-    <script src="atividades.js"></script>
-    <script src="abrir-tfm.js"></script>
+    <script src="atividades.js?v=20260828-1"></script>
+    <script src="abrir-tfm.js?v=20260828-2"></script>
     <script src="site-help.js"></script>
 </body>
 </html>
