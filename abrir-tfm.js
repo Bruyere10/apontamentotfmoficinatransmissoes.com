@@ -62,6 +62,9 @@ const btnFecharEditarLancamentos = document.getElementById("btn-fechar-editar-la
 const btnCancelarEditarLancamentos = document.getElementById("btn-cancelar-editar-lancamentos");
 const btnSalvarEditarLancamentos = document.getElementById("btn-salvar-editar-lancamentos");
 const modalCancelarTfm = document.getElementById("modal-cancelar-tfm");
+const modalLimiteHoras = document.getElementById("modal-limite-horas");
+const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-horas");
+const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
 const cancelarTfmNumero = document.getElementById("cancelar-tfm-numero");
 const cancelarTfmConfirmacao = document.getElementById("cancelar-tfm-confirmacao");
 const cancelarTfmFeedback = document.getElementById("cancelar-tfm-feedback");
@@ -88,6 +91,9 @@ let colaboradoresExtrasLancamento = [];
 let tfmPendenteFinalizacao = "";
 let tfmPendenteEdicao = "";
 let tfmPendenteCancelamento = "";
+let lancamentosPendenteFinalizacao = [];
+let resolverConfirmacaoLimiteHoras = null;
+let focoAntesConfirmacaoLimite = null;
 let colaboradoresAutorizados = [];
 const colaboradores = [
     { matricula: "87033", nome: "Leonel Barros Pereira Da Silva" }, { matricula: "61449", nome: "Ailton Dos Reis Santana" }, { matricula: "61618", nome: "Airton Fonseca do Nascimento" }, { matricula: "90079", nome: "Albert de Almeida Libério" }, { matricula: "61557", nome: "Aldecir de Oliveira Chaves" }, { matricula: "105741", nome: "Caio Resende Soares" }, { matricula: "61526", nome: "Cláudio Roberto Miranda" }, { matricula: "61461", nome: "Cleiton De Souza" }, { matricula: "61221", nome: "Ecelson Miranda" }, { matricula: "61604", nome: "Edilson Ribeiro de Andrade" }, { matricula: "81531", nome: "Fabio Henrique Alves Ventura" }, { matricula: "61134", nome: "Franklin de Jesus Souza" }, { matricula: "70980", nome: "Geraldo Marçal Da Silva" }, { matricula: "60738", nome: "Gustavo da Silva Amaral" }, { matricula: "62011", nome: "João Paulo de Rezende Trindade" }, { matricula: "83661", nome: "José Edson Martins Coelho" }, { matricula: "91542", nome: "José Egídio Rocha" }, { matricula: "60884", nome: "José Roberto Souza Franco" }, { matricula: "91541", nome: "Paulo Roberto Ferreira" }, { matricula: "63277", nome: "Renato Fagner Foureaux" }, { matricula: "61313", nome: "Renis Mendes Goulart" }, { matricula: "66642", nome: "Ricardo da Silva Matos" }, { matricula: "61834", nome: "Roberto Carlos Vieira Martins" }, { matricula: "60551", nome: "Rodolfo Ribeiro Martins" }, { matricula: "66647", nome: "Romeu Malagoli dos Santos" }, { matricula: "61091", nome: "Sebastião Dirino Correia" }, { matricula: "61367", nome: "Sueimer Batista Pereira" }, { matricula: "61938", nome: "Wender Bortoloto da Costa" }, { matricula: "61124", nome: "Valdemi Amancio Do Nascimento" }, { matricula: "215640", nome: "Renato Basílio dos Santos Júnior" }, { matricula: "208408", nome: "Rafael da Silva Moreira" }
@@ -321,6 +327,73 @@ function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
 }
 
+function fecharConfirmacaoLimiteHoras(confirmado) {
+    if (!resolverConfirmacaoLimiteHoras) {
+        return;
+    }
+
+    const resolver = resolverConfirmacaoLimiteHoras;
+    resolverConfirmacaoLimiteHoras = null;
+    modalLimiteHoras.hidden = true;
+    document.body.classList.remove("modal-limite-horas-aberto");
+    focoAntesConfirmacaoLimite?.focus();
+    focoAntesConfirmacaoLimite = null;
+    resolver(confirmado);
+}
+
+function abrirConfirmacaoLimiteHoras(datas = []) {
+    const datasUnicas = [...new Set(datas)].sort();
+    if (datasUnicas.length === 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis no dia ${formatarData(datasUnicas[0])}. Deseja continuar mesmo assim?`;
+    } else if (datasUnicas.length > 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis nos dias ${datasUnicas.map(formatarData).join(", ")}. Deseja continuar mesmo assim?`;
+    } else {
+        textoLimiteHoras.textContent = "Este lançamento ultrapassará as horas disponíveis do colaborador. Deseja continuar mesmo assim?";
+    }
+
+    focoAntesConfirmacaoLimite = document.activeElement;
+    modalLimiteHoras.hidden = false;
+    document.body.classList.add("modal-limite-horas-aberto");
+    btnContinuarLimiteHoras.focus();
+
+    return new Promise((resolver) => {
+        resolverConfirmacaoLimiteHoras = resolver;
+    });
+}
+
+modalLimiteHoras.querySelectorAll("[data-cancelar-limite-horas]").forEach((elemento) => {
+    elemento.addEventListener("click", () => fecharConfirmacaoLimiteHoras(false));
+});
+btnContinuarLimiteHoras.addEventListener("click", () => fecharConfirmacaoLimiteHoras(true));
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalLimiteHoras.hidden) {
+        fecharConfirmacaoLimiteHoras(false);
+    }
+});
+
+async function confirmarLimiteDiario(lancamentos, opcoes = {}) {
+    const resposta = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+            acao: "verificarLimiteHoras",
+            lancamentos,
+            tfmIgnorado: opcoes.tfmIgnorado || ""
+        })
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok || !resultado.sucesso) {
+        throw new Error(resultado.erro || "Não foi possível verificar as horas disponíveis.");
+    }
+
+    if (!resultado.alertas?.length) {
+        return true;
+    }
+
+    return abrirConfirmacaoLimiteHoras(opcoes.mostrarDatas ? resultado.alertas.map((item) => item.data) : []);
+}
+
 function mostrarFeedback(elemento, mensagem, tipo = "sucesso") {
     elemento.hidden = false;
     elemento.className = `tfm-feedback ${tipo}`;
@@ -499,6 +572,16 @@ async function abrirNovoTfm(event) {
     const botao = formAbrirTfm.querySelector("button[type='submit']");
     alterarEstadoBotao(botao, true, "Abrir TFM em andamento", "Abrindo TFM...");
     try {
+        const continuar = await confirmarLimiteDiario([{
+            nome: usuarioAtual.nome,
+            matricula: usuarioAtual.matricula,
+            data: abertoDataInicial.value,
+            horas
+        }]);
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcao({
             acao: "abrirTfm",
             tfm,
@@ -737,6 +820,22 @@ async function adicionarHoras(event) {
     const botao = formHorasTfmAberto.querySelector("button[type='submit']");
     alterarEstadoBotao(botao, true, "Adicionar lançamento diário", "Adicionando lançamento...");
     try {
+        const lancamentos = [{
+            nome: usuarioAtual.nome,
+            matricula: usuarioAtual.matricula,
+            data: horasTfmData.value,
+            horas: atividades.reduce((total, atividade) => total + converterHorasNumero(atividade.horas), 0)
+        }, ...colaboradoresExtrasLancamento.map((colaborador) => ({
+            nome: colaborador.nome,
+            matricula: colaborador.matricula,
+            data: horasTfmData.value,
+            horas: colaborador.horas
+        }))];
+        const continuar = await confirmarLimiteDiario(lancamentos);
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcao({
             acao: "adicionarHorasTfmAberto",
             tfm: horasTfmId.value,
@@ -760,6 +859,7 @@ function fecharModalFinalizarTfm() {
     modalFinalizarTfm.hidden = true;
     document.body.classList.remove("tfm-modal-aberto");
     tfmPendenteFinalizacao = "";
+    lancamentosPendenteFinalizacao = [];
 }
 
 function renderizarRevisaoFinal(dados) {
@@ -792,6 +892,7 @@ function renderizarRevisaoFinal(dados) {
 
 async function finalizarTfm(tfm) {
     tfmPendenteFinalizacao = tfm;
+    lancamentosPendenteFinalizacao = [];
     finalizarTfmFeedback.hidden = true;
     finalizarTfmResumo.innerHTML = "";
     finalizarTfmLancamentos.innerHTML = "<p class=\"oficina-status\">Carregando dados do TFM...</p>";
@@ -802,6 +903,12 @@ async function finalizarTfm(tfm) {
         const resposta = await fetch(`${SCRIPT_URL}?acao=detalharTfmAberto&tfm=${encodeURIComponent(tfm)}&matriculaHost=${encodeURIComponent(usuarioAtual.matricula)}`);
         const dados = await resposta.json();
         if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Erro ao carregar os dados do TFM.");
+        lancamentosPendenteFinalizacao = dados.registros.map((registro) => ({
+            nome: registro.nome,
+            matricula: registro.matricula,
+            data: normalizarDataInput(registro.data),
+            horas: registro.horas || registro.horasAdicionais
+        }));
         renderizarRevisaoFinal(dados);
     } catch (erro) {
         mostrarFeedback(finalizarTfmFeedback, erro.message, "erro");
@@ -967,6 +1074,14 @@ async function confirmarFinalizacaoTfm() {
     if (!tfmPendenteFinalizacao) return;
     alterarEstadoBotao(btnConfirmarFinalizarTfm, true, "Confirmar finalização", "Finalizando TFM...");
     try {
+        const continuar = await confirmarLimiteDiario(lancamentosPendenteFinalizacao, {
+            tfmIgnorado: tfmPendenteFinalizacao,
+            mostrarDatas: true
+        });
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcao({
             acao: "fecharTfmAberto",
             tfm: tfmPendenteFinalizacao,

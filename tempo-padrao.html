@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="manifest" href="site.webmanifest">
     <link rel="stylesheet" href="geral-oficina.css">
-    <link rel="stylesheet" href="tempo-padrao.css?v=20260828-2">
+    <link rel="stylesheet" href="tempo-padrao.css?v=20260902-1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
@@ -43,21 +43,31 @@
 
     <main class="oficina-app tempo-padrao-app">
         <section class="oficina-hero tempo-padrao-hero" aria-labelledby="tempo-padrao-titulo">
-            <div>
-                <span>Referência de atividades</span>
+            <div class="tempo-padrao-hero-conteudo">
+                <span>Oficina Motores | Referência operacional</span>
                 <h1 id="tempo-padrao-titulo">Tempo Padrão</h1>
-                <p>Consulte o tempo padrão definido no banco de dados para cada atividade cadastrada.</p>
+                <p>Consulte a referência oficial de horas para as atividades cadastradas.</p>
+            </div>
+            <div class="tempo-padrao-hero-selo" aria-label="Dados oficiais da oficina">
+                <i class="bi bi-shield-check" aria-hidden="true"></i>
+                <div>
+                    <span>Base de referência</span>
+                    <strong>Dados oficiais</strong>
+                </div>
             </div>
         </section>
 
         <section class="grafico-card tempo-padrao-card" aria-labelledby="lista-tempos-titulo">
             <div class="tempo-padrao-card-topo">
                 <div>
-                    <span>Catálogo completo</span>
-                    <h2 id="lista-tempos-titulo">Atividades e tempos padrão</h2>
+                    <span>Catálogo de operações</span>
+                    <h2 id="lista-tempos-titulo">Atividades e tempos de referência</h2>
                 </div>
                 <div class="tempo-padrao-card-acoes">
-                    <strong id="tempo-padrao-contagem" aria-live="polite">0 atividades</strong>
+                    <div class="tempo-padrao-contagem-bloco">
+                        <span>Registros exibidos</span>
+                        <strong id="tempo-padrao-contagem" aria-live="polite">0 atividades</strong>
+                    </div>
                     <button id="tempo-padrao-atualizar" type="button" title="Atualizar tempos padrão">
                         <i class="bi bi-arrow-clockwise"></i>
                         <span>Atualizar</span>
@@ -65,23 +75,26 @@
                 </div>
             </div>
 
-            <label class="tempo-padrao-busca" for="tempo-padrao-busca">
-                <span>Pesquisar atividade</span>
-                <div>
-                    <i class="bi bi-search"></i>
-                    <input id="tempo-padrao-busca" type="search" placeholder="Digite o nome ou o código" autocomplete="off">
-                    <button id="tempo-padrao-limpar" type="button" aria-label="Limpar pesquisa" title="Limpar pesquisa" hidden>
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                </div>
-            </label>
+            <div class="tempo-padrao-ferramentas">
+                <label class="tempo-padrao-busca" for="tempo-padrao-busca">
+                    <span>Pesquisar no catálogo</span>
+                    <div>
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <input id="tempo-padrao-busca" type="search" placeholder="Busque por atividade ou código" autocomplete="off">
+                        <button id="tempo-padrao-limpar" type="button" aria-label="Limpar pesquisa" title="Limpar pesquisa" hidden>
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </label>
+                <p class="tempo-padrao-ajuda"><i class="bi bi-info-circle" aria-hidden="true"></i> Valores apresentados em horas.</p>
+            </div>
 
             <p id="tempo-padrao-status" class="tempo-padrao-status" role="status" aria-live="polite">Carregando atividades...</p>
 
             <div class="tempo-padrao-tabela-wrapper">
                 <table class="tempo-padrao-tabela">
                     <thead>
-                        <tr><th scope="col">Código</th><th scope="col">Atividade</th><th scope="col">Tempo Padrão</th></tr>
+                        <tr><th scope="col">Código</th><th scope="col">Descrição da atividade</th><th scope="col">Tempo padrão</th></tr>
                     </thead>
                     <tbody id="tempo-padrao-lista"></tbody>
                 </table>

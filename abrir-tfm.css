@@ -1283,6 +1283,153 @@ body.tfm-modal-aberto{
     flex-wrap:wrap;
 }
 
+body.modal-limite-horas-aberto{
+    overflow:hidden;
+}
+
+.modal-limite-horas{
+    z-index:400;
+}
+
+.modal-limite-horas-painel{
+    background:#fff;
+    border-radius:8px;
+    max-width:470px;
+    overflow:hidden;
+    padding:30px;
+}
+
+.modal-limite-horas-fechar{
+    align-items:center;
+    background:#eef3fa;
+    border:0;
+    border-radius:4px;
+    color:#334155;
+    cursor:pointer;
+    display:flex;
+    height:34px;
+    justify-content:center;
+    position:absolute;
+    right:16px;
+    top:16px;
+    width:34px;
+}
+
+.modal-limite-horas-fechar:hover,
+.modal-limite-horas-fechar:focus-visible{
+    background:#dce7f5;
+    color:#001e62;
+    outline:2px solid rgba(0,163,224,0.25);
+}
+
+.modal-limite-horas-conteudo{
+    padding-right:24px;
+}
+
+.modal-limite-horas-icone{
+    align-items:center;
+    background:#fff4e5;
+    border:1px solid #f7c66b;
+    border-radius:6px;
+    color:#a15c00;
+    display:flex;
+    font-size:24px;
+    height:48px;
+    justify-content:center;
+    margin-bottom:18px;
+    width:48px;
+}
+
+.modal-limite-horas-conteudo > span{
+    color:#2674bb;
+    display:block;
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:0.06em;
+    margin-bottom:5px;
+    text-transform:uppercase;
+}
+
+.modal-limite-horas-conteudo h2{
+    color:#001e62;
+    font-size:21px;
+    line-height:1.25;
+}
+
+.modal-limite-horas-conteudo p{
+    color:#526176;
+    font-size:13px;
+    line-height:1.55;
+    margin-top:10px;
+}
+
+.modal-limite-horas-acoes{
+    border-top:1px solid #dce4ef;
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    margin-top:24px;
+    padding-top:18px;
+}
+
+.modal-limite-horas-acoes button{
+    align-items:center;
+    border-radius:4px;
+    cursor:pointer;
+    display:flex;
+    font:inherit;
+    font-size:12px;
+    font-weight:800;
+    gap:7px;
+    justify-content:center;
+    min-height:38px;
+    padding:8px 16px;
+}
+
+.modal-limite-horas-cancelar{
+    background:#fff;
+    border:1px solid #b9c7da;
+    color:#344054;
+}
+
+.modal-limite-horas-continuar{
+    background:#001e62;
+    border:1px solid #001e62;
+    color:#fff;
+}
+
+.modal-limite-horas-cancelar:hover,
+.modal-limite-horas-cancelar:focus-visible,
+.modal-limite-horas-continuar:hover,
+.modal-limite-horas-continuar:focus-visible{
+    outline:3px solid rgba(0,163,224,0.18);
+    outline-offset:1px;
+}
+
+.modal-limite-horas-continuar:hover,
+.modal-limite-horas-continuar:focus-visible{
+    background:#073b95;
+}
+
+@media(max-width:520px){
+    .modal-limite-horas{
+        padding:16px;
+    }
+
+    .modal-limite-horas-painel{
+        padding:24px 20px 20px;
+    }
+
+    .modal-limite-horas-conteudo{
+        padding-right:28px;
+    }
+
+    .modal-limite-horas-acoes{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+    }
+}
+
 @media (max-width:900px){
     .tfm-documentos-preview{
         grid-template-columns:repeat(2, minmax(0, 1fr));

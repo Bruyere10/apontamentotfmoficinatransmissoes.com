@@ -83,5 +83,7 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Trocar motor de partida DIESEL e 4x4",
     "Troca chicote almoxarifado",
     "Diagnose em motor na cela",
-    "Substituir tanque de combustível, tubos e coletor de admissão"
+    "Substituir tanque de combustível, tubos e coletor de admissão",
+    "Diagnose em motor na banca da oficina",
+    "Reparação do motor no CCP"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));

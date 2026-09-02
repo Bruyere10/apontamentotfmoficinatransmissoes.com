@@ -83,7 +83,9 @@ const atividadesDisponiveisLegado = [
     "Trocar motor de partida DIESEL e 4x4",
     "Troca chicote almoxarifado",
     "Diagnose em motor na cela",
-    "Substituir tanque de combustível, tubos e coletor de admissão"
+    "Substituir tanque de combustível, tubos e coletor de admissão",
+    "Diagnose em motor na banca da oficina",
+    "Reparação do motor no CCP"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -117,6 +119,9 @@ const modalRevisao = document.getElementById("modal-revisao");
 const modalHelp = document.getElementById("modal-help");
 const modalDocumentos = document.getElementById("modal-documentos");
 const modalDocumentosConteudo = document.getElementById("modal-documentos-conteudo");
+const modalLimiteHoras = document.getElementById("modal-limite-horas");
+const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-horas");
+const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
 const botoesHelp = document.querySelectorAll(".btn-help");
 const botoesHelpSugestao = document.querySelectorAll(".btn-help-sugestao");
 const botoesHelpFeedback = document.querySelectorAll(".btn-help-feedback");
@@ -245,6 +250,8 @@ let temposPadraoCarregados = false;
 const cacheConsultaTfms = new Map();
 let buscaEmLoteDisponivel = true;
 let tfmsAbertosCarregados = [];
+let resolverConfirmacaoLimiteHoras = null;
+let focoAntesConfirmacaoLimite = null;
 const colaboradores = [
     { matricula: "87033", nome: "Leonel Barros Pereira Da Silva" },
     { matricula: "61449", nome: "Ailton Dos Reis Santana" },
@@ -1971,6 +1978,97 @@ function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
 }
 
+function criarLancamentosVerificacaoApontamento(dados) {
+    const lancamentos = (dados.distribuicaoDiaria || []).map((item) => ({
+        nome: dados.nome,
+        matricula: dados.matricula,
+        data: item.data,
+        horas: item.horas
+    }));
+
+    (dados.colaboradoresAdicionais || []).forEach((colaborador) => {
+        const distribuicao = colaborador.lancamentos?.length
+            ? colaborador.lancamentos
+            : [{ data: dados.data, horas: colaborador.horas }];
+
+        distribuicao.forEach((item) => lancamentos.push({
+            nome: colaborador.nome,
+            matricula: colaborador.matricula,
+            data: item.data,
+            horas: item.horas
+        }));
+    });
+
+    return lancamentos;
+}
+
+function fecharConfirmacaoLimiteHoras(confirmado) {
+    if (!resolverConfirmacaoLimiteHoras) {
+        return;
+    }
+
+    const resolver = resolverConfirmacaoLimiteHoras;
+    resolverConfirmacaoLimiteHoras = null;
+    modalLimiteHoras.hidden = true;
+    document.body.classList.remove("modal-limite-horas-aberto");
+    focoAntesConfirmacaoLimite?.focus();
+    focoAntesConfirmacaoLimite = null;
+    resolver(confirmado);
+}
+
+function abrirConfirmacaoLimiteHoras(datas = []) {
+    const datasUnicas = [...new Set(datas)].sort();
+    if (datasUnicas.length === 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis no dia ${formatarData(datasUnicas[0])}. Deseja continuar mesmo assim?`;
+    } else if (datasUnicas.length > 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis nos dias ${datasUnicas.map(formatarData).join(", ")}. Deseja continuar mesmo assim?`;
+    } else {
+        textoLimiteHoras.textContent = "Este lançamento ultrapassará as horas disponíveis do colaborador. Deseja continuar mesmo assim?";
+    }
+
+    focoAntesConfirmacaoLimite = document.activeElement;
+    modalLimiteHoras.hidden = false;
+    document.body.classList.add("modal-limite-horas-aberto");
+    btnContinuarLimiteHoras.focus();
+
+    return new Promise((resolver) => {
+        resolverConfirmacaoLimiteHoras = resolver;
+    });
+}
+
+modalLimiteHoras.querySelectorAll("[data-cancelar-limite-horas]").forEach((elemento) => {
+    elemento.addEventListener("click", () => fecharConfirmacaoLimiteHoras(false));
+});
+btnContinuarLimiteHoras.addEventListener("click", () => fecharConfirmacaoLimiteHoras(true));
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalLimiteHoras.hidden) {
+        fecharConfirmacaoLimiteHoras(false);
+    }
+});
+
+async function confirmarLimiteDiario(lancamentos, opcoes = {}) {
+    const resposta = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+            acao: "verificarLimiteHoras",
+            lancamentos,
+            tfmIgnorado: opcoes.tfmIgnorado || ""
+        })
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok || !resultado.sucesso) {
+        throw new Error(resultado.erro || "Não foi possível verificar as horas disponíveis.");
+    }
+
+    if (!resultado.alertas?.length) {
+        return true;
+    }
+
+    return abrirConfirmacaoLimiteHoras(opcoes.mostrarDatas ? resultado.alertas.map((item) => item.data) : []);
+}
+
 function mostrarFeedbackPainel(elemento, mensagem, tipo = "sucesso") {
     elemento.hidden = false;
     elemento.className = `feedback-global ${tipo}`;
@@ -2106,6 +2204,16 @@ async function adicionarHorasAoTfm(event) {
     const botao = formHorasTfmAberto.querySelector("button[type='submit']");
     botao.disabled = true;
     try {
+        const continuar = await confirmarLimiteDiario([{
+            nome: usuarioAtual.nome,
+            matricula: usuarioAtual.matricula,
+            data: horasTfmData.value,
+            horas
+        }]);
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcaoTfmAberto({
             acao: "adicionarHorasTfmAberto",
             tfm: horasTfmId.value,
@@ -2130,6 +2238,26 @@ async function finalizarTfmAberto(tfm) {
     if (!window.confirm(`Finalizar o TFM ${tfm} e enviar todos os lançamentos para a planilha do BI? Esta ação é definitiva.`)) return;
 
     try {
+        const respostaDetalhes = await fetch(`${SCRIPT_URL}?acao=detalharTfmAberto&tfm=${encodeURIComponent(tfm)}&matriculaHost=${encodeURIComponent(usuarioAtual.matricula)}`);
+        const detalhes = await respostaDetalhes.json();
+        if (!respostaDetalhes.ok || !detalhes.sucesso) {
+            throw new Error(detalhes.erro || "Não foi possível verificar os lançamentos do TFM.");
+        }
+
+        const lancamentos = detalhes.registros.map((registro) => ({
+            nome: registro.nome,
+            matricula: registro.matricula,
+            data: normalizarDataInput(registro.data),
+            horas: registro.horas || registro.horasAdicionais
+        }));
+        const continuar = await confirmarLimiteDiario(lancamentos, {
+            tfmIgnorado: tfm,
+            mostrarDatas: true
+        });
+        if (!continuar) {
+            return;
+        }
+
         const resultado = await enviarAcaoTfmAberto({
             acao: "fecharTfmAberto",
             tfm,
@@ -3274,6 +3402,15 @@ async function salvarApontamentoConfirmado() {
     }
 
     try {
+        if (!linhaEditando) {
+            alterarEstadoConfirmacaoSalvamento(true, "Verificando horas...");
+            const continuar = await confirmarLimiteDiario(criarLancamentosVerificacaoApontamento(dados));
+            alterarEstadoConfirmacaoSalvamento(false);
+            if (!continuar) {
+                return;
+            }
+        }
+
         iniciarAnimacaoSalvamento();
 
         atualizarEtapaSalvamento("Coletando dados para envio...");
