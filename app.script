@@ -3,6 +3,7 @@ const CONFIG = {
   nomeAba: "Página1",
   nomeAbaTfmsAbertos: "TFMs Abertos",
   nomeAbaDadosComplementares: "Dados Complementares",
+  nomeAbaCodigos: "Códigos",
   emailAnexosDestino: "SG49872@stellantis.com",
   assuntoEmailAnexos: "ANEXO_APONTAMENTO_TFM_TRANSMISSOES",
   linkPastaAnexos: "https://shiftup-my.sharepoint.com/:f:/g/personal/sg49872_stellantis_com/IgCdEhIERGwMT6hFPi3_c0G9ASZVimclp7CDlt8rau5q4Rg"
@@ -80,6 +81,10 @@ function doPost(evento) {
 
     if (dados.acao === "registrarCadastroPendente") {
       return salvarCadastroPendente(dados);
+    }
+
+    if (dados.acao === "verificarLimiteHoras") {
+      return verificarLimiteHoras(dados);
     }
 
     if (dados.acao === "abrirTfm") {
@@ -425,6 +430,10 @@ function doGet(evento) {
   try {
     const parametros = evento.parameter || {};
 
+    if (parametros.acao === "listarTemposPadrao") {
+      return responderJson({ sucesso: true, atividades: listarTemposPadrao() });
+    }
+
     if (parametros.acao === "resumoGeral") {
       return responderJson(buscarResumoGeral());
     }
@@ -499,6 +508,30 @@ function doGet(evento) {
       erro: erro.message || "Erro ao consultar TFM."
     });
   }
+}
+
+function listarTemposPadrao() {
+  const aba = obterArquivoPlanilha().getSheetByName(CONFIG.nomeAbaCodigos);
+
+  if (!aba || aba.getLastRow() < 2) {
+    return [];
+  }
+
+  const valores = aba.getDataRange().getValues();
+  const cabecalhos = valores[0];
+  const colunaCodigo = obterIndiceCabecalho(cabecalhos, ["Codigo", "Código"]);
+  const colunaAtividade = obterIndiceCabecalho(cabecalhos, ["Atividade"]);
+  const colunaTempoPadrao = obterIndiceCabecalho(cabecalhos, ["Tempo Padrao", "Tempo Padrão"]);
+
+  if (colunaAtividade < 0 || colunaTempoPadrao < 0) {
+    throw new Error("As colunas Atividade e Tempo Padrão não foram encontradas na aba Códigos.");
+  }
+
+  return valores.slice(1).map((linha) => ({
+    codigo: colunaCodigo >= 0 ? linha[colunaCodigo] : "",
+    atividade: String(linha[colunaAtividade] || "").trim(),
+    tempoPadrao: Number(linha[colunaTempoPadrao]) || 0
+  })).filter((item) => item.atividade);
 }
 
 function obterArquivoPlanilha() {
@@ -578,6 +611,101 @@ function separarColaboradoresAdicionais(nomes, horas) {
 function converterHorasNumero(valor) {
   const horas = Number(String(valor || "0").replace(",", "."));
   return Number.isFinite(horas) ? horas : 0;
+}
+
+function verificarLimiteHoras(dados) {
+  const limite = 9;
+  const recebidos = Array.isArray(dados.lancamentos) ? dados.lancamentos : [];
+  const tfmIgnorado = String(dados.tfmIgnorado || "").trim();
+  const novosPorChave = {};
+
+  recebidos.forEach((lancamento) => {
+    const matricula = String(lancamento.matricula || "").trim();
+    const data = String(lancamento.data || "").trim();
+    const horas = converterHorasNumero(lancamento.horas);
+
+    if (!matricula || !/^\d{4}-\d{2}-\d{2}$/.test(data) || horas <= 0) {
+      return;
+    }
+
+    const chave = `${matricula}|${data}`;
+    if (!novosPorChave[chave]) {
+      novosPorChave[chave] = {
+        nome: String(lancamento.nome || "").trim(),
+        matricula,
+        data,
+        horasNovas: 0,
+        horasExistentes: 0
+      };
+    }
+    novosPorChave[chave].horasNovas += horas;
+  });
+
+  const chaves = Object.keys(novosPorChave);
+  if (!chaves.length) {
+    return responderJson({ sucesso: true, alertas: [], limite });
+  }
+
+  const chavesBuscadas = new Set(chaves);
+  const planilha = obterAbaPrincipal();
+  const dadosPrincipais = planilha.getDataRange().getValues();
+  const cabecalhosPrincipais = dadosPrincipais[0] || [];
+  const colunaData = obterIndiceCabecalho(cabecalhosPrincipais, ["Data"]);
+  const colunaMatricula = obterIndiceCabecalho(cabecalhosPrincipais, ["Matricula", "Matrícula"]);
+  const colunaHoras = obterIndiceCabecalho(cabecalhosPrincipais, ["Horas", "Horas Trabalhadas"]);
+
+  if (colunaData >= 0 && colunaMatricula >= 0 && colunaHoras >= 0) {
+    dadosPrincipais.slice(1).forEach((linha) => {
+      const chave = `${String(linha[colunaMatricula] || "").trim()}|${normalizarValorPlanilha(linha[colunaData])}`;
+      if (chavesBuscadas.has(chave)) {
+        novosPorChave[chave].horasExistentes += converterHorasNumero(linha[colunaHoras]);
+      }
+    });
+  }
+
+  const abaAbertos = obterAbaTfmsAbertos();
+  const dadosAbertos = abaAbertos.getDataRange().getValues();
+  const cabecalhosAbertos = dadosAbertos[0] || [];
+  const colunaStatusAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Status"]);
+  const colunaTfmAberto = obterIndiceCabecalho(cabecalhosAbertos, ["TFM"]);
+  const colunaDataAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Data Trabalhada"]);
+  const colunaMatriculaAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Matricula do Colaborador", "Matrícula do Colaborador"]);
+  const colunaHorasAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Horas"]);
+  const colunaHorasAdicionais = obterIndiceCabecalho(cabecalhosAbertos, ["Horas Adicionais"]);
+
+  if (colunaStatusAberto >= 0 && colunaDataAberto >= 0 && colunaMatriculaAberto >= 0) {
+    dadosAbertos.slice(1).forEach((linha) => {
+      if (String(linha[colunaStatusAberto] || "").trim().toUpperCase() !== "EM ANDAMENTO") {
+        return;
+      }
+
+      if (tfmIgnorado && colunaTfmAberto >= 0 && String(linha[colunaTfmAberto] || "").trim() === tfmIgnorado) {
+        return;
+      }
+
+      const chave = `${String(linha[colunaMatriculaAberto] || "").trim()}|${normalizarValorPlanilha(linha[colunaDataAberto])}`;
+      if (chavesBuscadas.has(chave)) {
+        novosPorChave[chave].horasExistentes += converterHorasNumero(colunaHorasAberto >= 0 ? linha[colunaHorasAberto] : 0);
+        novosPorChave[chave].horasExistentes += converterHorasNumero(colunaHorasAdicionais >= 0 ? linha[colunaHorasAdicionais] : 0);
+      }
+    });
+  }
+
+  const alertas = chaves.map((chave) => {
+    const item = novosPorChave[chave];
+    const horasExistentes = Number(item.horasExistentes.toFixed(2));
+    const horasNovas = Number(item.horasNovas.toFixed(2));
+    return {
+      nome: item.nome,
+      matricula: item.matricula,
+      data: item.data,
+      horasExistentes,
+      horasNovas,
+      total: Number((horasExistentes + horasNovas).toFixed(2))
+    };
+  }).filter((item) => item.total > limite);
+
+  return responderJson({ sucesso: true, alertas, limite });
 }
 
 function normalizarValorPlanilha(valor) {

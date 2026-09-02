@@ -1,55 +1,4 @@
-const atividadesDisponiveisLegado = [
-    "Atualização de câmbio EDCT",
-    "Atualização de câmbio protótipo",
-    "Check list carro novo",
-    "Check list carro usado",
-    "Desmontagem de câmbio AT6 fim de prova",
-    "Desmontagem de Cambio AT9 fim de prova",
-    "Desmontagem de câmbio CVT fim de prova",
-    "Desmontagem de câmbio EDCT fim de prova",
-    "Desmontagem do  câmbio banco para inspeção",
-    "Instrumentação com gage componentes diversos",
-    "Preparar câmbio AT9 com central hidraulica do câmbio instrumentada",
-    "Preparar veículo para prova de balocco",
-    "Preparar veículo para prova de energy test",
-    "Preparar veículo para prova de medição comando câmbio",
-    "Preparar veículo para prova de seme eixo",
-    "Preparar veículo para prova de spunto câmbio",
-    "Preparar veículo para prova de temperatura óleo câmbio",
-    "Preparar veículo para prova lama",
-    "Preparar Veículo para prova parking",
-    "Preparar veículo para prova poeira",
-    "Preparar veículo para realizar prova de ciclo napole",
-    "Preparar veículo para realizar prova de sistema 4X4",
-    "Realizar instrumentação prova TDOA 4X2",
-    "Realizar instrumentação prova TDOA 4X4",
-    "Realizar prova de lama",
-    "Realizar Prova de poeira",
-    "Realizar prova de temperatura de óleo câmbio",
-    "Realizar prova de validação de seme eixo",
-    "Realizar prova guado",
-    "Realizar prova para validação de sistema 4X4",
-    "Realizar prova parking",
-    "Rodagem de prova de TDOA 4X2",
-    "Rodagem de prova de TDOA 4X4",
-    "Substituição de 04 pneus e balanceamento de roda",
-    "Substituição de pastilha de freio",
-    "Substituir câmbio AT6",
-    "Substituir câmbio AT9 aplicação 2.2 diesel",
-    "Substituir câmbio AT9 aplicação GME",
-    "Substituir câmbio AT9 aplicação T4",
-    "Substituir câmbio C513",
-    "Substituir câmbio CVT",
-    "Substituir câmbio EDCT",
-    "Substituir câmbio KP1 AT",
-    "Substituir câmbio KP1 MT",
-    "Substituir comando câmbio KP1",
-    "Substituir comando câmbio linha fiat",
-    "Substituir comando câmbio linha jeep",
-    "Substituir comando câmbio linha PSA",
-    "Substituir PTU",
-    "Substituir RDU"
-];
+const atividadesDisponiveisLegado = [];
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
     : atividadesDisponiveisLegado;
@@ -80,11 +29,17 @@ const modalAtividade = document.getElementById("modal-atividade");
 const modalColaborador = document.getElementById("modal-colaborador");
 const modalRevisao = document.getElementById("modal-revisao");
 const modalHelp = document.getElementById("modal-help");
+const modalEmManutencao = document.getElementById("modal-em-manutencao");
 const modalDocumentos = document.getElementById("modal-documentos");
 const modalDocumentosConteudo = document.getElementById("modal-documentos-conteudo");
+const modalLimiteHoras = document.getElementById("modal-limite-horas");
+const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-horas");
+const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
 const botoesHelp = document.querySelectorAll(".btn-help");
 const botoesHelpSugestao = document.querySelectorAll(".btn-help-sugestao");
 const botoesHelpFeedback = document.querySelectorAll(".btn-help-feedback");
+const btnTempoPadrao = document.getElementById("btn-tempo-padrao");
+const btnBiOficina = document.getElementById("btn-bi-oficina");
 const btnConfirmarAtividade = document.querySelector(".btn-confirmar-atividade");
 const btnConfirmarColaborador = document.querySelector(".btn-confirmar-colaborador");
 const btnConfirmarSalvamento = document.querySelector(".btn-confirmar-salvamento");
@@ -106,6 +61,10 @@ const matriculaInput = document.getElementById("matricula");
 const modalAtividadeInput = document.getElementById("modal-atividade-input");
 const modalObservacaoInput = document.getElementById("modal-observacao-input");
 const modalHorasInput = document.getElementById("modal-horas-input");
+const modalTempoPadrao = document.getElementById("modal-tempo-padrao");
+const temposPadraoBusca = document.getElementById("tempos-padrao-busca");
+const temposPadraoLista = document.getElementById("tempos-padrao-lista");
+const temposPadraoStatus = document.getElementById("tempos-padrao-status");
 const modalColaboradorNomeInput = document.getElementById("modal-colaborador-nome");
 const modalColaboradorMatriculaInput = document.getElementById("modal-colaborador-matricula");
 const modalColaboradorDataInput = document.getElementById("modal-colaborador-data");
@@ -113,7 +72,6 @@ const modalColaboradorHorasInput = document.getElementById("modal-colaborador-ho
 const modalColaboradorLancamentos = document.getElementById("modal-colaborador-lancamentos");
 const btnAdicionarDiaColaborador = document.querySelector(".btn-adicionar-dia-colaborador");
 const feedbackGlobal = document.getElementById("feedback-global");
-const biEmObras = document.getElementById("bi-em-obras");
 const resumoAtividades = document.getElementById("resumo-atividades");
 const resumoSalvos = document.getElementById("resumo-salvos");
 const resumoUltimoTfm = document.getElementById("resumo-ultimo-tfm");
@@ -202,27 +160,141 @@ let lancamentosColaboradorModal = [];
 let documentosEmVerificacao = null;
 let salvamentoIntervalo = null;
 let consultaTfmIntervalo = null;
+let temposPadraoAtividades = [];
+let temposPadraoCarregados = false;
 const cacheConsultaTfms = new Map();
 let buscaEmLoteDisponivel = true;
 let tfmsAbertosCarregados = [];
+let resolverConfirmacaoLimiteHoras = null;
+let focoAntesConfirmacaoLimite = null;
 const colaboradores = [
-    { matricula: "60597", nome: "Anderson Parreiras" },
-    { matricula: "61228", nome: "Alexandre Guimaraes" },
+    { matricula: "61557", nome: "Aldecir de Oliveira Chaves" },
+    { matricula: "61238", nome: "Alexandre Guimaraes" },
     { matricula: "61680", nome: "Davis Ribeiro" },
+    { matricula: "207597", nome: "Gustavo Zorzam Santos" },
     { matricula: "60935", nome: "Mauricio Alves Marinho" },
     { matricula: "60957", nome: "Miguel Ângelo Soares" },
-    { matricula: "61410", nome: "Rubens Hemogenes" },
-    { matricula: "207597", nome: "Gustavo Zorzam Santos" },
     { matricula: "206373", nome: "Nathan Junio Morato" },
-    { matricula: "105741", nome: "Caio Soares" }
+    { matricula: "61410", nome: "Rubens Hemogenes" }
 ];
 const colaboradoresDisponiveis = colaboradores.map(({ nome }) => nome);
 
 function normalizarTexto(texto) {
-    return texto
+    return String(texto || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
+}
+
+function formatarTempoPadrao(valor) {
+    const numero = Number(valor);
+    if (valor === null || valor === undefined || valor === "" || !Number.isFinite(numero) || numero <= 0) {
+        return "Não informado";
+    }
+
+    return `${numero.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} h`;
+}
+
+function prepararTemposPadrao(dados) {
+    const recebidos = Array.isArray(dados) ? dados : [];
+    const porAtividade = new Map(recebidos.map((item) => [normalizarTexto(item.atividade), item]));
+
+    recebidos.forEach((item) => {
+        const atividade = String(item.atividade || "").trim();
+        if (atividade && !atividadesDisponiveis.some((existente) => normalizarTexto(existente) === normalizarTexto(atividade))) {
+            atividadesDisponiveis.push(atividade);
+        }
+    });
+    atividadesDisponiveis.sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
+
+    const catalogo = atividadesDisponiveis.map((atividade) => {
+        const item = porAtividade.get(normalizarTexto(atividade));
+        return {
+            codigo: item?.codigo ?? "-",
+            atividade,
+            tempoPadrao: item && item.tempoPadrao !== "" && item.tempoPadrao !== null
+                ? Number(item.tempoPadrao)
+                : null
+        };
+    });
+
+    recebidos.forEach((item) => {
+        if (!catalogo.some((catalogado) => normalizarTexto(catalogado.atividade) === normalizarTexto(item.atividade))) {
+            catalogo.push({ ...item, tempoPadrao: Number(item.tempoPadrao) });
+        }
+    });
+
+    temposPadraoAtividades = catalogo.sort((primeiro, segundo) => {
+        const codigoPrimeiro = Number(primeiro.codigo);
+        const codigoSegundo = Number(segundo.codigo);
+        if (Number.isFinite(codigoPrimeiro) && Number.isFinite(codigoSegundo)) return codigoPrimeiro - codigoSegundo;
+        if (Number.isFinite(codigoPrimeiro)) return -1;
+        if (Number.isFinite(codigoSegundo)) return 1;
+        return primeiro.atividade.localeCompare(segundo.atividade, "pt-BR");
+    });
+}
+
+function obterTempoPadrao(atividade) {
+    return temposPadraoAtividades.find((item) => normalizarTexto(item.atividade) === normalizarTexto(atividade))?.tempoPadrao ?? null;
+}
+
+function atualizarTempoPadraoInput(input, output = input.closest(".detalhes-item")?.querySelector(".tempo-padrao-resumo")) {
+    if (!output) return;
+    const atividade = input.value.trim();
+    output.textContent = atividade
+        ? `Tempo padrão: ${formatarTempoPadrao(obterTempoPadrao(atividade))}`
+        : "Tempo padrão: selecione uma atividade";
+}
+
+function renderizarTemposPadrao() {
+    if (!temposPadraoLista) return;
+    const busca = normalizarTexto(temposPadraoBusca?.value);
+    const filtrados = temposPadraoAtividades.filter((item) => normalizarTexto(item.atividade).includes(busca));
+    temposPadraoLista.innerHTML = "";
+
+    filtrados.forEach((item) => {
+        const linha = document.createElement("tr");
+        const codigo = document.createElement("td");
+        const atividade = document.createElement("td");
+        const tempo = document.createElement("td");
+        codigo.textContent = item.codigo;
+        atividade.textContent = item.atividade;
+        tempo.textContent = formatarTempoPadrao(item.tempoPadrao);
+        linha.append(codigo, atividade, tempo);
+        temposPadraoLista.appendChild(linha);
+    });
+
+    temposPadraoStatus.hidden = filtrados.length > 0;
+    temposPadraoStatus.textContent = temposPadraoAtividades.length
+        ? "Nenhuma atividade encontrada."
+        : "Nenhum tempo padrão foi encontrado.";
+}
+
+async function carregarTemposPadrao(forcarAtualizacao = false) {
+    if (temposPadraoCarregados && !forcarAtualizacao) return;
+    if (!temposPadraoCarregados) {
+        prepararTemposPadrao([]);
+        renderizarTemposPadrao();
+    }
+
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=listarTemposPadrao&_=${Date.now()}`);
+        const dados = await resposta.json();
+        if (!resposta.ok || !dados.sucesso || !Array.isArray(dados.atividades)) {
+            throw new Error(dados.erro || "Não foi possível carregar os tempos padrão.");
+        }
+        prepararTemposPadrao(dados.atividades);
+        temposPadraoCarregados = true;
+        renderizarTemposPadrao();
+        document.querySelectorAll(".detalhes-item .atividade-input").forEach((input) => atualizarTempoPadraoInput(input));
+        atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao);
+    } catch (erro) {
+        if (temposPadraoStatus) {
+            temposPadraoStatus.hidden = false;
+            temposPadraoStatus.textContent = "Não foi possível carregar os tempos padrão. Publique a versão atualizada do Apps Script e tente novamente.";
+        }
+        console.error(erro);
+    }
 }
 
 function fecharSugestoes() {
@@ -1292,7 +1364,7 @@ function criarDetalhesItem(indice) {
 
             <input id="atividade-${indice}" name="atividade[]" type="hidden" class="atividade-input" required>
             <input id="horas-${indice}" name="horas[]" type="hidden" class="horas-input" required>
-            <input id="observacao-${indice}" name="observacao[]" type="hidden" class="observacao-input">
+            <input id="observacao-${indice}" name="observacao[]" type="hidden" class="observacao-input" required>
         `;
 
         return novoDetalhe;
@@ -1303,6 +1375,7 @@ function criarDetalhesItem(indice) {
             <span class="bloco-numero">${numeroFormatado}</span>
             <div class="bloco-cabecalho-titulo">
                 <strong>Atividade realizada ${indice}</strong>
+                <span class="tempo-padrao-resumo">Tempo padrão: selecione uma atividade</span>
             </div>
             <button type="button" class="btn-remover-atividade" aria-label="Remover atividade ${indice}">
                 <i class="bi bi-trash3"></i>
@@ -1333,7 +1406,7 @@ function criarDetalhesItem(indice) {
                 <label for="observacao-${indice}">Observação da atividade ${indice}</label>
                 <div class="input-icon input-textarea">
                     <i class="bi bi-chat-left-text"></i>
-                    <textarea id="observacao-${indice}" name="observacao[]" rows="3" class="observacao-input" placeholder="Digite alguma observação sobre a atividade"></textarea>
+                    <textarea id="observacao-${indice}" name="observacao[]" rows="3" class="observacao-input" placeholder="Digite alguma observação sobre a atividade" required></textarea>
                 </div>
             </div>
 
@@ -1353,6 +1426,7 @@ function atualizarResumoAtividadeItem(item) {
     }
 
     resumo.textContent = horas ? `${atividade} - ${horas}h` : atividade;
+    atualizarTempoPadraoInput(item.querySelector(".atividade-input"));
 }
 
 function converterArquivoParaBase64(arquivo) {
@@ -1555,6 +1629,18 @@ function fecharModalHelp() {
     document.body.classList.remove("modal-aberto");
 }
 
+function abrirModalEmManutencao(event) {
+    event.preventDefault();
+    modalEmManutencao.hidden = false;
+    document.body.classList.add("modal-aberto");
+    modalEmManutencao.querySelector("[data-fechar-manutencao]")?.focus();
+}
+
+function fecharModalEmManutencao() {
+    modalEmManutencao.hidden = true;
+    document.body.classList.remove("modal-aberto");
+}
+
 function abrirModalSugestao() {
     alternarAppTab("sugestao");
     sugestaoAtividadeInput?.focus();
@@ -1584,6 +1670,7 @@ function abrirModalAtividade(item = null) {
     modalAtividadeInput.value = item?.querySelector(".atividade-input")?.value || "";
     modalObservacaoInput.value = item?.querySelector(".observacao-input")?.value || "";
     modalHorasInput.value = item?.querySelector(".horas-input")?.value || "";
+    atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao);
     document.getElementById("modal-atividade-titulo").textContent = item ? "Editar atividade" : "Adicionar outra atividade";
     btnConfirmarAtividade.querySelector("span").textContent = item ? "Salvar alterações" : "Adicionar atividade";
     modalAtividade.hidden = false;
@@ -1597,6 +1684,7 @@ function fecharModalAtividade() {
     modalAtividadeInput.value = "";
     modalObservacaoInput.value = "";
     modalHorasInput.value = "";
+    atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao);
     document.getElementById("modal-atividade-titulo").textContent = "Adicionar outra atividade";
     btnConfirmarAtividade.querySelector("span").textContent = "Adicionar atividade";
     marcarCampo(modalAtividadeInput, false);
@@ -1665,12 +1753,14 @@ function adicionarAtividadeDoModal() {
     const atividade = modalAtividadeInput.value.trim();
     const horas = normalizarHoras(modalHorasInput.value);
     const horasNumero = Number(horas);
+    const observacao = modalObservacaoInput.value.trim();
 
     marcarCampo(modalAtividadeInput, !atividade);
     marcarCampo(modalHorasInput, !horasNumero || horasNumero <= 0, "Informe as horas da atividade.");
+    marcarCampo(modalObservacaoInput, !observacao, "Informe uma observação sobre a atividade.");
 
-    if (!atividade || !horasNumero || horasNumero <= 0) {
-        mostrarFeedback("Informe atividade e horas antes de adicionar.", "erro");
+    if (!atividade || !horasNumero || horasNumero <= 0 || !observacao) {
+        mostrarFeedback("Informe atividade, horas e observação antes de adicionar.", "erro");
         return;
     }
 
@@ -1681,7 +1771,7 @@ function adicionarAtividadeDoModal() {
     const item = atividadeEmEdicao || criarDetalhesItem(document.querySelectorAll(".detalhes-item").length + 1);
 
     item.querySelector(".atividade-input").value = atividade;
-    item.querySelector(".observacao-input").value = modalObservacaoInput.value.trim();
+    item.querySelector(".observacao-input").value = observacao;
     item.querySelector(".horas-input").value = horas;
 
     if (!atividadeEmEdicao) {
@@ -1790,6 +1880,97 @@ function converterHorasNumero(valor) {
 
 function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
+}
+
+function criarLancamentosVerificacaoApontamento(dados) {
+    const lancamentos = (dados.distribuicaoDiaria || []).map((item) => ({
+        nome: dados.nome,
+        matricula: dados.matricula,
+        data: item.data,
+        horas: item.horas
+    }));
+
+    (dados.colaboradoresAdicionais || []).forEach((colaborador) => {
+        const distribuicao = colaborador.lancamentos?.length
+            ? colaborador.lancamentos
+            : [{ data: dados.data, horas: colaborador.horas }];
+
+        distribuicao.forEach((item) => lancamentos.push({
+            nome: colaborador.nome,
+            matricula: colaborador.matricula,
+            data: item.data,
+            horas: item.horas
+        }));
+    });
+
+    return lancamentos;
+}
+
+function fecharConfirmacaoLimiteHoras(confirmado) {
+    if (!resolverConfirmacaoLimiteHoras) {
+        return;
+    }
+
+    const resolver = resolverConfirmacaoLimiteHoras;
+    resolverConfirmacaoLimiteHoras = null;
+    modalLimiteHoras.hidden = true;
+    document.body.classList.remove("modal-limite-horas-aberto");
+    focoAntesConfirmacaoLimite?.focus();
+    focoAntesConfirmacaoLimite = null;
+    resolver(confirmado);
+}
+
+function abrirConfirmacaoLimiteHoras(datas = []) {
+    const datasUnicas = [...new Set(datas)].sort();
+    if (datasUnicas.length === 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis no dia ${formatarData(datasUnicas[0])}. Deseja continuar mesmo assim?`;
+    } else if (datasUnicas.length > 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis nos dias ${datasUnicas.map(formatarData).join(", ")}. Deseja continuar mesmo assim?`;
+    } else {
+        textoLimiteHoras.textContent = "Este lançamento ultrapassará as horas disponíveis do colaborador. Deseja continuar mesmo assim?";
+    }
+
+    focoAntesConfirmacaoLimite = document.activeElement;
+    modalLimiteHoras.hidden = false;
+    document.body.classList.add("modal-limite-horas-aberto");
+    btnContinuarLimiteHoras.focus();
+
+    return new Promise((resolver) => {
+        resolverConfirmacaoLimiteHoras = resolver;
+    });
+}
+
+modalLimiteHoras.querySelectorAll("[data-cancelar-limite-horas]").forEach((elemento) => {
+    elemento.addEventListener("click", () => fecharConfirmacaoLimiteHoras(false));
+});
+btnContinuarLimiteHoras.addEventListener("click", () => fecharConfirmacaoLimiteHoras(true));
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalLimiteHoras.hidden) {
+        fecharConfirmacaoLimiteHoras(false);
+    }
+});
+
+async function confirmarLimiteDiario(lancamentos, opcoes = {}) {
+    const resposta = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+            acao: "verificarLimiteHoras",
+            lancamentos,
+            tfmIgnorado: opcoes.tfmIgnorado || ""
+        })
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok || !resultado.sucesso) {
+        throw new Error(resultado.erro || "Não foi possível verificar as horas disponíveis.");
+    }
+
+    if (!resultado.alertas?.length) {
+        return true;
+    }
+
+    return abrirConfirmacaoLimiteHoras(opcoes.mostrarDatas ? resultado.alertas.map((item) => item.data) : []);
 }
 
 function mostrarFeedbackPainel(elemento, mensagem, tipo = "sucesso") {
@@ -1917,22 +2098,33 @@ async function carregarTfmsAbertos() {
 async function adicionarHorasAoTfm(event) {
     event.preventDefault();
     const horas = converterHorasNumero(horasTfmQuantidade.value);
+    const observacao = horasTfmObservacao.value.trim();
 
-    if (!horasTfmData.value || !horasTfmAtividade.value.trim() || horas <= 0) {
-        mostrarFeedbackPainel(horasTfmFeedback, "Preencha o dia, a atividade e as horas trabalhadas.", "erro");
+    if (!horasTfmData.value || !horasTfmAtividade.value.trim() || horas <= 0 || !observacao) {
+        mostrarFeedbackPainel(horasTfmFeedback, "Preencha o dia, a atividade, as horas trabalhadas e a observação.", "erro");
         return;
     }
 
     const botao = formHorasTfmAberto.querySelector("button[type='submit']");
     botao.disabled = true;
     try {
+        const continuar = await confirmarLimiteDiario([{
+            nome: usuarioAtual.nome,
+            matricula: usuarioAtual.matricula,
+            data: horasTfmData.value,
+            horas
+        }]);
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcaoTfmAberto({
             acao: "adicionarHorasTfmAberto",
             tfm: horasTfmId.value,
             dataTrabalhada: horasTfmData.value,
             atividade: horasTfmAtividade.value.trim(),
             horas,
-            observacao: horasTfmObservacao.value.trim(),
+            observacao,
             nomeColaborador: usuarioAtual.nome,
             matriculaColaborador: usuarioAtual.matricula
         });
@@ -1950,6 +2142,26 @@ async function finalizarTfmAberto(tfm) {
     if (!window.confirm(`Finalizar o TFM ${tfm} e enviar todos os lançamentos para a planilha do BI? Esta ação é definitiva.`)) return;
 
     try {
+        const respostaDetalhes = await fetch(`${SCRIPT_URL}?acao=detalharTfmAberto&tfm=${encodeURIComponent(tfm)}&matriculaHost=${encodeURIComponent(usuarioAtual.matricula)}`);
+        const detalhes = await respostaDetalhes.json();
+        if (!respostaDetalhes.ok || !detalhes.sucesso) {
+            throw new Error(detalhes.erro || "Não foi possível verificar os lançamentos do TFM.");
+        }
+
+        const lancamentos = detalhes.registros.map((registro) => ({
+            nome: registro.nome,
+            matricula: registro.matricula,
+            data: normalizarDataInput(registro.data),
+            horas: registro.horas || registro.horasAdicionais
+        }));
+        const continuar = await confirmarLimiteDiario(lancamentos, {
+            tfmIgnorado: tfm,
+            mostrarDatas: true
+        });
+        if (!continuar) {
+            return;
+        }
+
         const resultado = await enviarAcaoTfmAberto({
             acao: "fecharTfmAberto",
             tfm,
@@ -2754,9 +2966,9 @@ async function enviarSugestaoAtividade() {
     const nomeColaborador = (usuarioAtual?.nome || document.getElementById("nome").value).trim();
     const matriculaColaborador = (usuarioAtual?.matricula || matriculaInput.value).trim();
 
-    if (atividade.length < 3) {
-        mostrarFeedback("Digite uma atividade sugerida antes de enviar.", "erro");
-        sugestaoAtividadeInput.focus();
+    if (atividade.length < 3 || !observacao) {
+        mostrarFeedback("Digite a atividade sugerida e uma observação antes de enviar.", "erro");
+        (atividade.length < 3 ? sugestaoAtividadeInput : sugestaoObservacaoInput).focus();
         return;
     }
 
@@ -2814,7 +3026,7 @@ async function enviarFeedbackColaborador() {
     const matriculaColaborador = (usuarioAtual?.matricula || matriculaInput.value).trim();
 
     if (feedback.length < 3) {
-        mostrarFeedback("Digite sua sugestão, ideia ou reclamação antes de enviar.", "erro");
+        mostrarFeedback("Digite pelo menos 3 caracteres no feedback antes de enviar.", "erro");
         feedbackTextoInput.focus();
         return;
     }
@@ -2943,6 +3155,18 @@ function validarFormulario() {
     for (const atividadeInput of document.querySelectorAll(".detalhes-item .atividade-input")) {
         if (!validarAtividadeCadastrada(atividadeInput)) {
             mostrarAvisoAtividadeNaoCadastrada(atividadeInput.value);
+            return false;
+        }
+
+        const observacaoInput = atividadeInput.closest(".detalhes-item")?.querySelector(".observacao-input");
+        if (!observacaoInput?.value.trim()) {
+            marcarCampo(observacaoInput, true, "Informe uma observação sobre a atividade.");
+            mostrarFeedback("Todas as atividades precisam de observação.", "erro");
+            if (observacaoInput.type === "hidden") {
+                abrirModalAtividade(atividadeInput.closest(".detalhes-item"));
+            } else {
+                observacaoInput.focus();
+            }
             return false;
         }
     }
@@ -3082,6 +3306,15 @@ async function salvarApontamentoConfirmado() {
     }
 
     try {
+        if (!linhaEditando) {
+            alterarEstadoConfirmacaoSalvamento(true, "Verificando horas...");
+            const continuar = await confirmarLimiteDiario(criarLancamentosVerificacaoApontamento(dados));
+            alterarEstadoConfirmacaoSalvamento(false);
+            if (!continuar) {
+                return;
+            }
+        }
+
         iniciarAnimacaoSalvamento();
 
         atualizarEtapaSalvamento("Coletando dados para envio...");
@@ -3163,8 +3396,8 @@ async function salvarApontamentoConfirmado() {
     }
 }
 
-document.querySelectorAll(".atividade-input").forEach((input) => configurarAutocomplete(input, atividadesDisponiveis));
-configurarAutocomplete(modalAtividadeInput, atividadesDisponiveis);
+document.querySelectorAll(".atividade-input").forEach((input) => configurarAutocomplete(input, atividadesDisponiveis, () => atualizarTempoPadraoInput(input), () => atualizarTempoPadraoInput(input)));
+configurarAutocomplete(modalAtividadeInput, atividadesDisponiveis, () => atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao), () => atualizarTempoPadraoInput(modalAtividadeInput, modalTempoPadrao));
 configurarAutocomplete(modalColaboradorNomeInput, colaboradoresDisponiveis, atualizarMatriculaModalColaborador, atualizarMatriculaModalColaborador);
 document.querySelectorAll(".colaborador-input").forEach((input) => configurarAutocomplete(input, colaboradoresDisponiveis, atualizarMatriculaPorNome, atualizarMatriculaPorNome));
 configurarAutocomplete(loginNomeInput, colaboradoresDisponiveis, atualizarMatriculaLoginPorNome, atualizarMatriculaLoginPorNome);
@@ -3242,19 +3475,8 @@ document.querySelectorAll(".app-nav-btn[data-app-tab]").forEach((botao) => {
     });
 });
 
-document.querySelector("[data-bi-em-obras]")?.addEventListener("click", (evento) => {
-    evento.preventDefault();
-    biEmObras.hidden = false;
-    window.clearTimeout(window.biEmObrasTimeout);
-    window.biEmObrasTimeout = window.setTimeout(() => {
-        biEmObras.hidden = true;
-    }, 6000);
-});
-
-document.querySelector("[data-fechar-bi-aviso]")?.addEventListener("click", () => {
-    biEmObras.hidden = true;
-    window.clearTimeout(window.biEmObrasTimeout);
-});
+temposPadraoBusca?.addEventListener("input", renderizarTemposPadrao);
+window.addEventListener("focus", () => carregarTemposPadrao(true));
 
 document.querySelectorAll("[data-tfm-aberto-view]").forEach((botao) => {
     botao.addEventListener("click", () => alternarTfmAbertoView(botao.dataset.tfmAbertoView));
@@ -3416,6 +3638,10 @@ document.querySelectorAll("[data-fechar-help]").forEach((elemento) => {
     elemento.addEventListener("click", fecharModalHelp);
 });
 
+document.querySelectorAll("[data-fechar-manutencao]").forEach((elemento) => {
+    elemento.addEventListener("click", fecharModalEmManutencao);
+});
+
 document.querySelectorAll("[data-fechar-documentos]").forEach((elemento) => {
     elemento.addEventListener("click", fecharModalDocumentos);
 });
@@ -3441,6 +3667,8 @@ document.querySelectorAll("[data-fechar-revisao]").forEach((elemento) => {
 });
 
 botoesHelp.forEach((botao) => botao.addEventListener("click", abrirModalHelp));
+btnTempoPadrao.addEventListener("click", abrirModalEmManutencao);
+btnBiOficina.addEventListener("click", abrirModalEmManutencao);
 botoesHelpSugestao.forEach((botao) => {
     botao.addEventListener("click", () => {
         fecharModalHelp();
@@ -3530,6 +3758,10 @@ document.addEventListener("keydown", (event) => {
         fecharModalHelp();
     }
 
+    if (event.key === "Escape" && !modalEmManutencao.hidden) {
+        fecharModalEmManutencao();
+    }
+
     if (event.key === "Escape" && modalSugestao && !modalSugestao.hidden) {
         fecharModalSugestao();
     }
@@ -3600,6 +3832,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 configurarDataAtual();
+carregarTemposPadrao();
 renderizarHistorico();
 carregarResumoPlanilha();
 carregarHistoricoPlanilha();

@@ -860,6 +860,7 @@
     padding:10px 2px 0;
     overflow-wrap:anywhere;
     -webkit-box-orient:vertical;
+    line-clamp:4;
     -webkit-line-clamp:4;
 }
 

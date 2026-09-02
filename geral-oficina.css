@@ -161,34 +161,14 @@ body{
 .oficina-titulo span{
     color:rgba(255,255,255,0.74);
     display:block;
-    width:100%;
-    text-align:center;
     font-size:12px;
     font-weight:900;
     letter-spacing:0.18em;
     text-transform:uppercase;
 }
 
-.oficina-motor-img{
-    filter:drop-shadow(0 7px 10px rgba(0,0,0,0.24));
-    height:42px;
-    object-fit:contain;
-    width:58px;
-}
-
-.oficina-titulo{
-    align-items:center;
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    text-align:center;
-    width:max-content;
-}
-
 .oficina-titulo strong{
     display:block;
-    white-space:nowrap;
-    text-align:center;
     font-size:24px;
     line-height:1;
     margin-top:4px;

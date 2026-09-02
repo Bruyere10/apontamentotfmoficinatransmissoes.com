@@ -62,6 +62,9 @@ const btnFecharEditarLancamentos = document.getElementById("btn-fechar-editar-la
 const btnCancelarEditarLancamentos = document.getElementById("btn-cancelar-editar-lancamentos");
 const btnSalvarEditarLancamentos = document.getElementById("btn-salvar-editar-lancamentos");
 const modalCancelarTfm = document.getElementById("modal-cancelar-tfm");
+const modalLimiteHoras = document.getElementById("modal-limite-horas");
+const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-horas");
+const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
 const cancelarTfmNumero = document.getElementById("cancelar-tfm-numero");
 const cancelarTfmConfirmacao = document.getElementById("cancelar-tfm-confirmacao");
 const cancelarTfmFeedback = document.getElementById("cancelar-tfm-feedback");
@@ -88,9 +91,19 @@ let colaboradoresExtrasLancamento = [];
 let tfmPendenteFinalizacao = "";
 let tfmPendenteEdicao = "";
 let tfmPendenteCancelamento = "";
+let lancamentosPendenteFinalizacao = [];
+let resolverConfirmacaoLimiteHoras = null;
+let focoAntesConfirmacaoLimite = null;
 let colaboradoresAutorizados = [];
 const colaboradores = [
-    { matricula: "60597", nome: "Anderson Parreiras" }, { matricula: "61228", nome: "Alexandre Guimaraes" }, { matricula: "61680", nome: "Davis Ribeiro" }, { matricula: "60935", nome: "Mauricio Alves Marinho" }, { matricula: "60957", nome: "Miguel Ângelo Soares" }, { matricula: "61410", nome: "Rubens Hemogenes" }, { matricula: "207597", nome: "Gustavo Zorzam Santos" }, { matricula: "206373", nome: "Nathan Junio Morato" }, { matricula: "105741", nome: "Caio Soares" }
+    { matricula: "61557", nome: "Aldecir de Oliveira Chaves" },
+    { matricula: "61238", nome: "Alexandre Guimaraes" },
+    { matricula: "61680", nome: "Davis Ribeiro" },
+    { matricula: "207597", nome: "Gustavo Zorzam Santos" },
+    { matricula: "60935", nome: "Mauricio Alves Marinho" },
+    { matricula: "60957", nome: "Miguel Ângelo Soares" },
+    { matricula: "206373", nome: "Nathan Junio Morato" },
+    { matricula: "61410", nome: "Rubens Hemogenes" }
 ];
 
 function obterLoginSalvo() {
@@ -121,6 +134,22 @@ function normalizarTexto(valor) {
 function atividadeValida(valor) {
     const normalizado = normalizarTexto(valor.trim());
     return atividadesDisponiveis.some((atividade) => normalizarTexto(atividade) === normalizado);
+}
+
+async function carregarAtividadesDisponiveis() {
+    try {
+        const resposta = await fetch(`${SCRIPT_URL}?acao=listarTemposPadrao&_=${Date.now()}`);
+        const dados = await resposta.json();
+        if (!resposta.ok || !dados.sucesso || !Array.isArray(dados.atividades)) return;
+
+        dados.atividades.forEach((item) => {
+            const atividade = String(item.atividade || "").trim();
+            if (atividade && !atividadeValida(atividade)) atividadesDisponiveis.push(atividade);
+        });
+        atividadesDisponiveis.sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
+    } catch (erro) {
+        console.error("Não foi possível atualizar a lista de atividades.", erro);
+    }
 }
 
 function configurarBuscaAtividade(input, lista) {
@@ -305,6 +334,73 @@ function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
 }
 
+function fecharConfirmacaoLimiteHoras(confirmado) {
+    if (!resolverConfirmacaoLimiteHoras) {
+        return;
+    }
+
+    const resolver = resolverConfirmacaoLimiteHoras;
+    resolverConfirmacaoLimiteHoras = null;
+    modalLimiteHoras.hidden = true;
+    document.body.classList.remove("modal-limite-horas-aberto");
+    focoAntesConfirmacaoLimite?.focus();
+    focoAntesConfirmacaoLimite = null;
+    resolver(confirmado);
+}
+
+function abrirConfirmacaoLimiteHoras(datas = []) {
+    const datasUnicas = [...new Set(datas)].sort();
+    if (datasUnicas.length === 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis no dia ${formatarData(datasUnicas[0])}. Deseja continuar mesmo assim?`;
+    } else if (datasUnicas.length > 1) {
+        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis nos dias ${datasUnicas.map(formatarData).join(", ")}. Deseja continuar mesmo assim?`;
+    } else {
+        textoLimiteHoras.textContent = "Este lançamento ultrapassará as horas disponíveis do colaborador. Deseja continuar mesmo assim?";
+    }
+
+    focoAntesConfirmacaoLimite = document.activeElement;
+    modalLimiteHoras.hidden = false;
+    document.body.classList.add("modal-limite-horas-aberto");
+    btnContinuarLimiteHoras.focus();
+
+    return new Promise((resolver) => {
+        resolverConfirmacaoLimiteHoras = resolver;
+    });
+}
+
+modalLimiteHoras.querySelectorAll("[data-cancelar-limite-horas]").forEach((elemento) => {
+    elemento.addEventListener("click", () => fecharConfirmacaoLimiteHoras(false));
+});
+btnContinuarLimiteHoras.addEventListener("click", () => fecharConfirmacaoLimiteHoras(true));
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalLimiteHoras.hidden) {
+        fecharConfirmacaoLimiteHoras(false);
+    }
+});
+
+async function confirmarLimiteDiario(lancamentos, opcoes = {}) {
+    const resposta = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+            acao: "verificarLimiteHoras",
+            lancamentos,
+            tfmIgnorado: opcoes.tfmIgnorado || ""
+        })
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok || !resultado.sucesso) {
+        throw new Error(resultado.erro || "Não foi possível verificar as horas disponíveis.");
+    }
+
+    if (!resultado.alertas?.length) {
+        return true;
+    }
+
+    return abrirConfirmacaoLimiteHoras(opcoes.mostrarDatas ? resultado.alertas.map((item) => item.data) : []);
+}
+
 function mostrarFeedback(elemento, mensagem, tipo = "sucesso") {
     elemento.hidden = false;
     elemento.className = `tfm-feedback ${tipo}`;
@@ -467,6 +563,7 @@ async function abrirNovoTfm(event) {
     const tfm = abertoTfm.value.trim();
     const atividade = abertoAtividade.value.trim();
     const horas = converterHorasNumero(abertoHoras.value);
+    const observacao = abertoObservacao.value.trim();
 
     if (!atividadeValida(atividade)) {
         mostrarFeedback(abertoFeedback, "Esta atividade não consta na lista cadastrada e não pode ser salva. Caso seja necessária, registre uma sugestão em Sugerir atividade.", "erro");
@@ -474,14 +571,24 @@ async function abrirNovoTfm(event) {
         return;
     }
 
-    if (!/^\d{6}$/.test(tfm) || !abertoDataInicial.value || !abertoTurno.value || horas <= 0) {
-        mostrarFeedback(abertoFeedback, "Preencha data inicial, turno, TFM, atividade e horas trabalhadas.", "erro");
+    if (!/^\d{6}$/.test(tfm) || !abertoDataInicial.value || !abertoTurno.value || horas <= 0 || !observacao) {
+        mostrarFeedback(abertoFeedback, "Preencha data inicial, turno, TFM, atividade, horas trabalhadas e observação.", "erro");
         return;
     }
 
     const botao = formAbrirTfm.querySelector("button[type='submit']");
     alterarEstadoBotao(botao, true, "Abrir TFM em andamento", "Abrindo TFM...");
     try {
+        const continuar = await confirmarLimiteDiario([{
+            nome: usuarioAtual.nome,
+            matricula: usuarioAtual.matricula,
+            data: abertoDataInicial.value,
+            horas
+        }]);
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcao({
             acao: "abrirTfm",
             tfm,
@@ -493,7 +600,7 @@ async function abrirNovoTfm(event) {
             colaboradoresAutorizados,
             atividade,
             horas,
-            observacao: abertoObservacao.value.trim(),
+            observacao,
             documentos: await prepararDocumentos()
         });
         formAbrirTfm.reset();
@@ -615,16 +722,17 @@ function adicionarAtividadeExtra(event) {
     event.preventDefault();
     const atividade = atividadeHorasNome.value.trim();
     const horas = converterHorasNumero(atividadeHorasQuantidade.value);
+    const observacao = atividadeHorasObservacao.value.trim();
 
-    if (!atividadeValida(atividade) || horas <= 0) {
-        mostrarFeedback(atividadeHorasFeedback, "Selecione uma atividade da lista e informe as horas trabalhadas.", "erro");
+    if (!atividadeValida(atividade) || horas <= 0 || !observacao) {
+        mostrarFeedback(atividadeHorasFeedback, "Selecione uma atividade e informe as horas trabalhadas e a observação.", "erro");
         return;
     }
 
     atividadesExtrasLancamento.push({
         atividade,
         horas,
-        observacao: atividadeHorasObservacao.value.trim()
+        observacao
     });
     renderizarAtividadesExtras();
     fecharModalAtividadeHoras();
@@ -703,21 +811,38 @@ async function carregarTfmsAbertos() {
 async function adicionarHoras(event) {
     event.preventDefault();
     const horas = converterHorasNumero(horasTfmQuantidade.value);
+    const observacao = horasTfmObservacao.value.trim();
     const registro = tfmsAbertosCarregados.find((item) => item.tfm === horasTfmId.value);
     const atividades = [{
         atividade: registro?.atividade || "",
         horas,
-        observacao: horasTfmObservacao.value.trim()
+        observacao
     }, ...atividadesExtrasLancamento];
 
-    if (!horasTfmData.value || horas <= 0 || !registro?.atividade) {
-        mostrarFeedback(horasTfmFeedback, "Preencha a data e as horas trabalhadas.", "erro");
+    if (!horasTfmData.value || horas <= 0 || !registro?.atividade || !observacao) {
+        mostrarFeedback(horasTfmFeedback, "Preencha a data, as horas trabalhadas e a observação.", "erro");
         return;
     }
 
     const botao = formHorasTfmAberto.querySelector("button[type='submit']");
     alterarEstadoBotao(botao, true, "Adicionar lançamento diário", "Adicionando lançamento...");
     try {
+        const lancamentos = [{
+            nome: usuarioAtual.nome,
+            matricula: usuarioAtual.matricula,
+            data: horasTfmData.value,
+            horas: atividades.reduce((total, atividade) => total + converterHorasNumero(atividade.horas), 0)
+        }, ...colaboradoresExtrasLancamento.map((colaborador) => ({
+            nome: colaborador.nome,
+            matricula: colaborador.matricula,
+            data: horasTfmData.value,
+            horas: colaborador.horas
+        }))];
+        const continuar = await confirmarLimiteDiario(lancamentos);
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcao({
             acao: "adicionarHorasTfmAberto",
             tfm: horasTfmId.value,
@@ -741,6 +866,7 @@ function fecharModalFinalizarTfm() {
     modalFinalizarTfm.hidden = true;
     document.body.classList.remove("tfm-modal-aberto");
     tfmPendenteFinalizacao = "";
+    lancamentosPendenteFinalizacao = [];
 }
 
 function renderizarRevisaoFinal(dados) {
@@ -773,6 +899,7 @@ function renderizarRevisaoFinal(dados) {
 
 async function finalizarTfm(tfm) {
     tfmPendenteFinalizacao = tfm;
+    lancamentosPendenteFinalizacao = [];
     finalizarTfmFeedback.hidden = true;
     finalizarTfmResumo.innerHTML = "";
     finalizarTfmLancamentos.innerHTML = "<p class=\"oficina-status\">Carregando dados do TFM...</p>";
@@ -783,6 +910,12 @@ async function finalizarTfm(tfm) {
         const resposta = await fetch(`${SCRIPT_URL}?acao=detalharTfmAberto&tfm=${encodeURIComponent(tfm)}&matriculaHost=${encodeURIComponent(usuarioAtual.matricula)}`);
         const dados = await resposta.json();
         if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Erro ao carregar os dados do TFM.");
+        lancamentosPendenteFinalizacao = dados.registros.map((registro) => ({
+            nome: registro.nome,
+            matricula: registro.matricula,
+            data: normalizarDataInput(registro.data),
+            horas: registro.horas || registro.horasAdicionais
+        }));
         renderizarRevisaoFinal(dados);
     } catch (erro) {
         mostrarFeedback(finalizarTfmFeedback, erro.message, "erro");
@@ -948,6 +1081,14 @@ async function confirmarFinalizacaoTfm() {
     if (!tfmPendenteFinalizacao) return;
     alterarEstadoBotao(btnConfirmarFinalizarTfm, true, "Confirmar finalização", "Finalizando TFM...");
     try {
+        const continuar = await confirmarLimiteDiario(lancamentosPendenteFinalizacao, {
+            tfmIgnorado: tfmPendenteFinalizacao,
+            mostrarDatas: true
+        });
+        if (!continuar) {
+            return;
+        }
+
         await enviarAcao({
             acao: "fecharTfmAberto",
             tfm: tfmPendenteFinalizacao,
@@ -965,11 +1106,14 @@ async function confirmarFinalizacaoTfm() {
 
 if (aplicarLogin()) {
     abertoDataInicial.value = new Date().toISOString().slice(0, 10);
+    carregarAtividadesDisponiveis();
     configurarBuscaAtividade(abertoAtividade, abertoAtividadeOpcoes);
     configurarBuscaAtividade(atividadeHorasNome, atividadeHorasOpcoes);
     configurarBuscaColaborador();
     configurarBuscaAutorizados();
 }
+
+window.addEventListener("focus", carregarAtividadesDisponiveis);
 
 document.querySelectorAll("[data-tfm-view]").forEach((botao) => {
     botao.addEventListener("click", () => alternarView(botao.dataset.tfmView));
