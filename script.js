@@ -1,91 +1,65 @@
 const atividadesDisponiveisLegado = [
-    "Troca de motor N4/ N3 em veículo",
-    "Troca de motor Diesel 2.2 KP1",
-    "Troca de motor Diesel 2.2 Comander / Toro / RampageAC",
-    "Troca de motor T3 / T4",
-    "Revisão motor veículo",
-    "Pesagem de óleo quente",
-    "Check list veículo 0Km",
-    "Checklist veículo Usado",
-    "Check list Ducato e K0",
-    "Troca de componente do motor em veículo (Front Cover, corrente, VVT...)",
-    "Troca de catalisador em veículos aspirados",
-    "Troca de catalisador em veículos turbo Fiat",
-    "Troca de catalisador em veículo Peugeot e 281",
-    "Instrumentação de catalisador veículo",
-    "Troca de catalisador Diesel veículo",
-    "Troca de turbina Diesel veículo",
-    "Troca de turbina T3 e T4 veículo",
-    "Troca de turbina GME veículo",
-    "Revisão de motor em cela",
-    "Troca de velas em veículo",
-    "Troca de motor em carrinho preparado aspirado e turbo",
-    "Preparação de carrinho para rodagem em cela.(Novo)",
-    "Troca de motor GME veículo",
-    "Motor controle total",
-    "Motor controle parcial",
-    "Atualização de componentes",
-    "Desmontagem fim de prova aspirado e turbo",
-    "Desmontagem fim de prova turbo GME, diesel e EC5",
-    "Instrumentação de cabeçote (Incoder)",
-    "Instrumentação de turbina",
-    "Troca de cabeçote",
-    "Troca de frontcover",
-    "Troca de motor Start Cart",
-    "Troca de sensores indicom na cela turbo",
-    "Troca de sensores indicom aspirado",
-    "Troca de bicos e bomba em veículo",
-    "Benchmarking Escaneamento 3D",
-    "PowerBook Motor Benchmarking",
-    "PowerBook Transmissão Benchmarking",
-    "PowerBook Eletrificados H.V Benchmarking",
-    "PowerBook Sistemas Benchmarking",
-    "Preparação Workshop Motores/Transmissão/Eletrificação/Sistemas Benchmarking",
-    "Montagem Workshop Motores/Transmissão/Eletrificação/Sistemas Benchmarking",
-    "Suporte técnico Workshop Motores/Transmissão/Eletrificação/Sistemas Benchmarking",
-    "Desmontagem Workshop Motores/Transmissão/Eletrificação/Sistemas Benchmarking",
-    "Suporte técnico em apresentações Workshop Welcome Benchmarking",
-    "Checklist veículo Benchmarking",
-    "Levar e Buscar carro Benchmarking locadora/concessionária",
-    "Movimentar veículos Benchmarking Oficina/Benchmarking veículos/Pátio",
-    "Diagnose em veículos Benchmarking",
-    "Retirada de bateria H.V veículos Benchmarking",
-    "Desenergização veículos híbridos",
-    "Outros - Atividade rápida",
-    "Outros - Atividade curta",
-    "Outros - Atividade média",
-    "Outros - Atividade longa",
-    "Alinhamento de motor em cela",
-    "TFM Cancelada",
-    "Troca de motor Diesel em Cela",
-    "Preparação e Alinhamento de Motor Diesel 2.2 em Cela",
-    "Troca de componentes no veiculo",
-    "Instrumentação de coletor de admissão",
-    "Troca de catalisador no motor na cela",
-    "Preparação de motor para rodagem em cela",
-    "Montagem de motor CCP controle parcial",
-    "Preparação de motor revista para devolução a manufatura, realização de check list",
-    "Armazenamento dos componentes de motor em kit",
-    "Substituição do suporte do A/C",
-    "Atividade troca de bateria H.V veículo J3U HEV",
-    "Troca coletor de admissão",
-    "Substituir motor T3",
-    "Diagnose em veículo",
-    "Exposição dos componentes de motores na bancada da sala benchmarking ou no carrinho teardown.",
-    "Desmontagem parcial do motor com controle de torques.",
-    "Preparação de motor para Lea Motors China",
-    "Desmontagem de motor e preparação de componentes para controle dimensional realizado pela metrologia.",
-    "Descarte de peças.",
-    "Troca Óleo Motor.",
-    "Teste de funcionamento dos injetores vazão e pressão",
-    "Teste de vazão e pressão dos injetores e troca",
-    "Retirada de bateria H.V",
-    "Trocar motor de partida DIESEL e 4x4",
-    "Troca chicote almoxarifado",
-    "Diagnose em motor na cela",
-    "Substituir tanque de combustível, tubos e coletor de admissão",
-    "Diagnose em motor na banca da oficina",
-    "Reparação do motor no CCP"
+    "Desmontagem de câmbio em bancada para inspeção",
+    "Desmontagem de câmbio AT9 fim de prova",
+    "Desmontagem de câmbio CVT fim de prova",
+    "Desmontagem de câmbio AT6 fim de prova",
+    "Atualização de câmbio protótipo",
+    "Atualização de câmbio EDCT",
+    "Desmontagem de câmbio EDCT fim de prova",
+    "Substituir câmbio EDCT",
+    "Substituir câmbio AT9 aplicação GME",
+    "Substituir câmbio AT9 aplicação 2.2 diesel",
+    "Substituir câmbio AT9 aplicação T4",
+    "Substituir câmbio AT6",
+    "Substituir câmbio CVT",
+    "Substituir câmbio C513",
+    "Substituir câmbio KP1 MT",
+    "Substituir câmbio KP1 AT",
+    "Substituir PTU",
+    "Substituir RDU",
+    "Substituir comando câmbio KP1",
+    "Substituir comando de câmbio linha Jeep",
+    "Substituir comando câmbio linha PSA",
+    "Substituir comando de câmbio linha Fiat",
+    "Check list carro novo",
+    "Check list carro usado",
+    "Rodagem de prova de TDOA 4X2",
+    "Rodagem de prova de TDOA 4X4",
+    "Realizar instrumentação prova TDOA 4X2",
+    "Realizar instrumentação prova TDOA 4X4",
+    "Realizar prova de poeira",
+    "Realizar prova de lama",
+    "Realizar prova de vau",
+    "Realizar prova de temperatura de óleo câmbio",
+    "Realizar prova de parking",
+    "Preparar veículo para prova de temperatura óleo câmbio",
+    "Preparar veículo para prova poeira",
+    "Preparar veículo para prova lama",
+    "Preparar veículo para prova de parking",
+    "Preparar veículo para prova de Energy Test",
+    "Preparar veículo para realizar prova de ciclo Napole",
+    "Preparar veículo para prova de semi-eixo",
+    "Realizar prova de validação de semi-eixo",
+    "Preparar câmbio AT9 com central hidráulica do câmbio instrumentada",
+    "Preparar veículo para realizar prova de sistema 4X4",
+    "Realizar prova para validação de sistema 4X4",
+    "Preparar veículo para prova de Spunto do câmbio",
+    "Preparar veículo para prova de Balocco",
+    "Preparar veículo para realizar prova de medição do comando de câmbio",
+    "Substituição de 04 pneus e balanceamento de roda",
+    "Instrumentação com gages em componentes diversos",
+    "Substituição de pastilhas de freio",
+    "Desmontagem do câmbio CVT para retirada de peças para o laboratorio",
+    "Descarte de câmbio C513",
+    "Levar peças para área de descarte galpão 85",
+    "Descarte de câmbio AT6b",
+    "Instalação de Control TEC",
+    "Carregamento e pesagem de veículos com peso",
+    "Preparação de câmbio protótipos",
+    "Descarte de pneus",
+    "Acompanhar o analista no momento de aquisição de medições de comando de câmbio",
+    "Preparação do carro para medição de comando",
+    "Preparar veículo para rodagem de prova no ciclo Ama para validação de engrenagens"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -121,7 +95,28 @@ const modalDocumentos = document.getElementById("modal-documentos");
 const modalDocumentosConteudo = document.getElementById("modal-documentos-conteudo");
 const modalLimiteHoras = document.getElementById("modal-limite-horas");
 const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-horas");
+const btnCancelarLimiteHoras = modalLimiteHoras.querySelector(".modal-limite-horas-cancelar");
+const tituloLimiteHoras = document.getElementById("modal-limite-horas-titulo");
 const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
+const modalAlertasDisponibilidade = document.getElementById("modal-alertas-disponibilidade");
+const textoAlertasDisponibilidade = document.getElementById("modal-alertas-disponibilidade-texto");
+const btnFecharAlertasDisponibilidade = document.getElementById("btn-fechar-alertas-disponibilidade");
+const notificacoesDisponibilidade = document.getElementById("notificacoes-disponibilidade");
+const btnNotificacoesDisponibilidade = document.getElementById("btn-notificacoes-disponibilidade");
+const contadorNotificacoesDisponibilidade = document.getElementById("notificacoes-disponibilidade-contador");
+const painelNotificacoesDisponibilidade = document.getElementById("painel-notificacoes-disponibilidade");
+const listaNotificacoesDisponibilidade = document.getElementById("notificacoes-disponibilidade-lista");
+const btnAtualizarNotificacoes = document.getElementById("btn-atualizar-notificacoes");
+const avisoRevisoesDisponibilidade = document.getElementById("aviso-revisoes-disponibilidade");
+const btnEntendiRevisoes = document.getElementById("btn-entendi-revisoes");
+const resumoNotificacoesDisponibilidade = document.getElementById("notificacoes-disponibilidade-resumo");
+const ultimaAtualizacaoNotificacoes = document.getElementById("notificacoes-ultima-atualizacao");
+const dadosAtrasadosNotificacoes = document.getElementById("notificacoes-dados-atrasados");
+const filtroNotificacoesTipo = document.getElementById("filtro-notificacoes-tipo");
+const filtroNotificacoesMes = document.getElementById("filtro-notificacoes-mes");
+const rodapeNotificacoesDisponibilidade = document.getElementById("notificacoes-disponibilidade-rodape");
+const btnExportarNotificacoes = document.getElementById("btn-exportar-notificacoes");
+const btnVerTodasNotificacoes = document.getElementById("btn-ver-todas-notificacoes");
 const botoesHelp = document.querySelectorAll(".btn-help");
 const botoesHelpSugestao = document.querySelectorAll(".btn-help-sugestao");
 const botoesHelpFeedback = document.querySelectorAll(".btn-help-feedback");
@@ -157,6 +152,8 @@ const modalColaboradorHorasInput = document.getElementById("modal-colaborador-ho
 const modalColaboradorLancamentos = document.getElementById("modal-colaborador-lancamentos");
 const btnAdicionarDiaColaborador = document.querySelector(".btn-adicionar-dia-colaborador");
 const feedbackGlobal = document.getElementById("feedback-global");
+const avisoBiOficina = document.getElementById("aviso-bi-oficina");
+const btnFecharAvisoBiOficina = document.getElementById("btn-fechar-aviso-bi-oficina");
 const resumoAtividades = document.getElementById("resumo-atividades");
 const resumoSalvos = document.getElementById("resumo-salvos");
 const resumoUltimoTfm = document.getElementById("resumo-ultimo-tfm");
@@ -225,7 +222,7 @@ const ETAPAS_CONSULTA_TFM = [
     "Consultando o Banco de Dados...",
     "Aguarde, quase lá..."
 ];
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycpTr1Vj5nCByX2gYKvaXnhw7EiBUYqlnRq7ClSoqr2ZNBNvAUqvW2br6ksyAJDcxO/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxghyPXviuoKUSM2Yf7cIPTI9XEiomzyQJ1Z-yllIEra-0fehMC9BLx1GAuu1EX5cL9/exec";
 const LIMITE_PREVIEW_DOCUMENTOS = 4;
 let resumoPlanilhaCarregado = false;
 let historicoAtual = [];
@@ -252,38 +249,20 @@ let buscaEmLoteDisponivel = true;
 let tfmsAbertosCarregados = [];
 let resolverConfirmacaoLimiteHoras = null;
 let focoAntesConfirmacaoLimite = null;
+let alertasDisponibilidadeAtuais = [];
+let chavesAlertasNovos = new Set();
+let exibirTodasNotificacoes = false;
+let ultimaConsultaAlertasEm = 0;
 const colaboradores = [
-    { matricula: "87033", nome: "Leonel Barros Pereira Da Silva" },
-    { matricula: "61449", nome: "Ailton Dos Reis Santana" },
-    { matricula: "61618", nome: "Airton Fonseca do Nascimento" },
-    { matricula: "90079", nome: "Albert de Almeida Libério" },
+    { matricula: "60597", nome: "Anderson Parreiras" },
     { matricula: "61557", nome: "Aldecir de Oliveira Chaves" },
-    { matricula: "105741",nome: "Caio Resende Soares" },
-    { matricula: "61526", nome: "Cláudio Roberto Miranda" },
-    { matricula: "61461", nome: "Cleiton De Souza" },
-    { matricula: "61221", nome: "Ecelson Miranda" },
-    { matricula: "61604", nome: "Edilson Ribeiro de Andrade" },
-    { matricula: "81531", nome: "Fabio Henrique Alves Ventura" },
-    { matricula: "61134", nome: "Franklin de Jesus Souza" },
-    { matricula: "70980", nome: "Geraldo Marçal Da Silva" },
-    { matricula: "60738", nome: "Gustavo da Silva Amaral" },
-    { matricula: "62011", nome: "João Paulo de Rezende Trindade" },
-    { matricula: "83661", nome: "José Edson Martins Coelho" },
-    { matricula: "91542", nome: "José Egídio Rocha" },
-    { matricula: "60884", nome: "José Roberto Souza Franco" },
-    { matricula: "91541", nome: "Paulo Roberto Ferreira" },
-    { matricula: "63277", nome: "Renato Fagner Foureaux" },
-    { matricula: "61313", nome: "Renis Mendes Goulart" },
-    { matricula: "66642", nome: "Ricardo da Silva Matos" },
-    { matricula: "61834", nome: "Roberto Carlos Vieira Martins" },
-    { matricula: "60551", nome: "Rodolfo Ribeiro Martins" },
-    { matricula: "66647", nome: "Romeu Malagoli dos Santos" },
-    { matricula: "61091", nome: "Sebastião Dirino Correia" },
-    { matricula: "61367", nome: "Sueimer Batista Pereira" },
-    { matricula: "61938", nome: "Wender Bortoloto da Costa" },
-    { matricula: "61124", nome: "Valdemi Amancio Do Nascimento" },
-    { matricula: "215640", nome: "Renato Basílio dos Santos Júnior" },
-    { matricula: "208408", nome: "Rafael da Silva Moreira" }
+    { matricula: "61238", nome: "Alexandre Guimaraes" },
+    { matricula: "61680", nome: "Davis Ribeiro" },
+    { matricula: "60935", nome: "Mauricio Alves Marinho" },
+    { matricula: "60957", nome: "Miguel Ângelo Soares" },
+    { matricula: "207597", nome: "Gustavo Zorzam Santos" },
+    { matricula: "206373", nome: "Nathan Junio Morato" },
+    { matricula: "61410", nome: "Rubens Hemogenes" }
 ];
 const colaboradoresDisponiveis = colaboradores.map(({ nome }) => nome);
 
@@ -1017,12 +996,250 @@ function aplicarUsuarioLogado(colaborador) {
     document.body.classList.remove("login-bloqueado");
     telaLogin.hidden = true;
     usuarioLogado.hidden = false;
+    notificacoesDisponibilidade.hidden = false;
     usuarioLogadoNome.textContent = colaborador.cadastroPendente ? `${colaborador.nome} (cadastro pendente)` : colaborador.nome;
     document.getElementById("nome").value = colaborador.nome;
     matriculaInput.value = colaborador.matricula;
     limparFeedbackLogin();
     carregarDesempenhoColaborador();
+    consultarAlertasDisponibilidade(colaborador, true);
 }
+
+function obterTipoAlertaDisponibilidade(alerta) {
+    if (alerta.tipo) return alerta.tipo;
+    const situacao = normalizarTexto(alerta.situacao);
+    if (/ferias|afastado|afastamento|atestado|falta/.test(situacao)) return "ausencia";
+    if (/sem horas|nao informad|nao preenchid|pendente/.test(situacao)) return "nao-informada";
+    return "excesso";
+}
+
+function obterChaveAlertaDisponibilidade(alerta) {
+    return [alerta.data, obterTipoAlertaDisponibilidade(alerta), alerta.situacao, alerta.total, alerta.horasDisponiveis].join("|");
+}
+
+function obterAlertasDisponibilidadeFiltrados() {
+    return alertasDisponibilidadeAtuais.filter((alerta) => {
+        const correspondeTipo = !filtroNotificacoesTipo.value || obterTipoAlertaDisponibilidade(alerta) === filtroNotificacoesTipo.value;
+        const correspondeMes = !filtroNotificacoesMes.value || String(alerta.data || "").slice(0, 7) === filtroNotificacoesMes.value;
+        return correspondeTipo && correspondeMes;
+    });
+}
+
+function atualizarFiltroMesNotificacoes() {
+    const valorAtual = filtroNotificacoesMes.value;
+    const meses = [...new Set(alertasDisponibilidadeAtuais.map((alerta) => String(alerta.data || "").slice(0, 7)).filter(Boolean))].sort().reverse();
+    filtroNotificacoesMes.innerHTML = '<option value="">Todos</option>';
+    meses.forEach((mes) => {
+        const opcao = document.createElement("option");
+        const dataMes = new Date(`${mes}-01T00:00:00Z`);
+        opcao.value = mes;
+        opcao.textContent = dataMes.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+        filtroNotificacoesMes.appendChild(opcao);
+    });
+    filtroNotificacoesMes.value = meses.includes(valorAtual) ? valorAtual : "";
+}
+
+function atualizarAtualidadeNotificacoes() {
+    const atualizacoes = alertasDisponibilidadeAtuais
+        .map((alerta) => new Date(alerta.atualizadoEm))
+        .filter((data) => !Number.isNaN(data.getTime()));
+    const ultimaAtualizacao = atualizacoes.sort((primeira, segunda) => segunda - primeira)[0];
+
+    if (!ultimaAtualizacao) {
+        ultimaAtualizacaoNotificacoes.textContent = "Atualização da disponibilidade não informada";
+        dadosAtrasadosNotificacoes.hidden = alertasDisponibilidadeAtuais.length === 0;
+        return;
+    }
+
+    ultimaAtualizacaoNotificacoes.textContent = `Disponibilidade atualizada em ${ultimaAtualizacao.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`;
+    dadosAtrasadosNotificacoes.hidden = Date.now() - ultimaAtualizacao.getTime() <= 72 * 60 * 60 * 1000;
+}
+
+function renderizarNotificacoesDisponibilidade(alertas = alertasDisponibilidadeAtuais, mensagem = "") {
+    alertasDisponibilidadeAtuais = Array.isArray(alertas) ? alertas : [];
+    listaNotificacoesDisponibilidade.innerHTML = "";
+    contadorNotificacoesDisponibilidade.textContent = String(alertasDisponibilidadeAtuais.length);
+    contadorNotificacoesDisponibilidade.hidden = alertasDisponibilidadeAtuais.length === 0;
+    const quantidadeNovas = alertasDisponibilidadeAtuais.filter((alerta) => chavesAlertasNovos.has(obterChaveAlertaDisponibilidade(alerta))).length;
+    resumoNotificacoesDisponibilidade.textContent = alertasDisponibilidadeAtuais.length === 1
+        ? "1 revisão pendente"
+        : `${alertasDisponibilidadeAtuais.length} revisões pendentes`;
+    if (quantidadeNovas) resumoNotificacoesDisponibilidade.textContent += ` · ${quantidadeNovas} nova${quantidadeNovas === 1 ? "" : "s"}`;
+    rodapeNotificacoesDisponibilidade.hidden = alertasDisponibilidadeAtuais.length === 0;
+    atualizarFiltroMesNotificacoes();
+    atualizarAtualidadeNotificacoes();
+
+    if (!alertasDisponibilidadeAtuais.length) {
+        const vazio = document.createElement("p");
+        vazio.className = "notificacoes-disponibilidade-vazio";
+        vazio.textContent = mensagem || "Nenhuma divergência encontrada nos seus lançamentos.";
+        listaNotificacoesDisponibilidade.appendChild(vazio);
+        return;
+    }
+
+    const alertasFiltrados = obterAlertasDisponibilidadeFiltrados();
+    if (!alertasFiltrados.length) {
+        const vazio = document.createElement("p");
+        vazio.className = "notificacoes-disponibilidade-vazio";
+        vazio.textContent = "Nenhuma revisão corresponde aos filtros selecionados.";
+        listaNotificacoesDisponibilidade.appendChild(vazio);
+        btnVerTodasNotificacoes.hidden = true;
+        return;
+    }
+
+    const ordemTipos = { excesso: 0, ausencia: 1, "nao-informada": 2 };
+    const alertasOrdenados = [...alertasFiltrados].sort((primeiro, segundo) => {
+        const diferencaTipo = ordemTipos[obterTipoAlertaDisponibilidade(primeiro)] - ordemTipos[obterTipoAlertaDisponibilidade(segundo)];
+        return diferencaTipo || String(segundo.data).localeCompare(String(primeiro.data));
+    });
+    const alertasVisiveis = exibirTodasNotificacoes ? alertasOrdenados : alertasOrdenados.slice(0, 5);
+    const rotulosTipo = {
+        excesso: "Horas excedidas",
+        ausencia: "Ausências registradas",
+        "nao-informada": "Disponibilidade não informada"
+    };
+    let ultimoTipo = "";
+
+    alertasVisiveis.forEach((alerta) => {
+        const tipo = obterTipoAlertaDisponibilidade(alerta);
+        if (tipo !== ultimoTipo) {
+            const grupo = document.createElement("h3");
+            grupo.className = "notificacoes-disponibilidade-grupo";
+            grupo.textContent = rotulosTipo[tipo] || "Outras revisões";
+            listaNotificacoesDisponibilidade.appendChild(grupo);
+            ultimoTipo = tipo;
+        }
+
+        const item = document.createElement("article");
+        const titulo = document.createElement("strong");
+        const descricao = document.createElement("p");
+        item.className = `notificacao-disponibilidade-item notificacao-tipo-${tipo}`;
+        if (chavesAlertasNovos.has(obterChaveAlertaDisponibilidade(alerta))) {
+            item.classList.add("notificacao-disponibilidade-nova");
+            const marcador = document.createElement("span");
+            marcador.className = "notificacao-disponibilidade-marcador";
+            marcador.textContent = "Novo";
+            item.appendChild(marcador);
+        }
+        titulo.textContent = `Divergência em ${formatarData(alerta.data)}`;
+        descricao.textContent = criarDescricaoAlertaDisponibilidade(alerta, true);
+        item.append(titulo, descricao);
+        listaNotificacoesDisponibilidade.appendChild(item);
+    });
+
+    btnVerTodasNotificacoes.hidden = alertasFiltrados.length <= 5;
+    btnVerTodasNotificacoes.textContent = exibirTodasNotificacoes ? "Mostrar menos" : `Ver todas (${alertasFiltrados.length})`;
+}
+
+function fecharPainelNotificacoes() {
+    painelNotificacoesDisponibilidade.hidden = true;
+    btnNotificacoesDisponibilidade.setAttribute("aria-expanded", "false");
+}
+
+function alternarPainelNotificacoes() {
+    const abrir = painelNotificacoesDisponibilidade.hidden;
+    painelNotificacoesDisponibilidade.hidden = !abrir;
+    btnNotificacoesDisponibilidade.setAttribute("aria-expanded", String(abrir));
+}
+
+function mostrarAvisoRevisoesDisponibilidade() {
+    avisoRevisoesDisponibilidade.hidden = false;
+}
+
+async function consultarAlertasDisponibilidade(colaborador, exibirAviso = false) {
+    renderizarNotificacoesDisponibilidade([], "Verificando seus lançamentos...");
+    btnAtualizarNotificacoes.disabled = true;
+    try {
+        const parametros = new URLSearchParams({
+            acao: "alertasDisponibilidade",
+            matricula: colaborador.matricula,
+            _: Date.now().toString()
+        });
+        const resposta = await fetch(`${SCRIPT_URL}?${parametros}`);
+        const dados = await resposta.json();
+
+        if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Falha ao consultar notificações.");
+        if (usuarioAtual?.matricula !== colaborador.matricula) return;
+
+        const alertas = Array.isArray(dados.alertas) ? dados.alertas : [];
+        const chaveHistorico = `alertas-disponibilidade-anteriores:${colaborador.matricula}`;
+        const chavesAnteriores = new Set(JSON.parse(localStorage.getItem(chaveHistorico) || "[]"));
+        chavesAlertasNovos = new Set(alertas.map(obterChaveAlertaDisponibilidade).filter((chave) => !chavesAnteriores.has(chave)));
+        localStorage.setItem(chaveHistorico, JSON.stringify(alertas.map(obterChaveAlertaDisponibilidade)));
+        ultimaConsultaAlertasEm = Date.now();
+        renderizarNotificacoesDisponibilidade(alertas);
+        if (!alertas.length) return;
+        if (exibirAviso) mostrarAvisoRevisoesDisponibilidade();
+    } catch (erro) {
+        renderizarNotificacoesDisponibilidade([], "Não foi possível atualizar as notificações. Tente novamente.");
+        console.error("Não foi possível verificar a disponibilidade diária.", erro);
+    } finally {
+        btnAtualizarNotificacoes.disabled = false;
+    }
+}
+
+function fecharAlertasDisponibilidade() {
+    modalAlertasDisponibilidade.hidden = true;
+    document.body.classList.remove("modal-limite-horas-aberto");
+}
+
+modalAlertasDisponibilidade.querySelectorAll("[data-fechar-alertas-disponibilidade]").forEach((elemento) => {
+    elemento.addEventListener("click", fecharAlertasDisponibilidade);
+});
+btnNotificacoesDisponibilidade.addEventListener("click", alternarPainelNotificacoes);
+btnAtualizarNotificacoes.addEventListener("click", () => {
+    if (usuarioAtual) consultarAlertasDisponibilidade(usuarioAtual);
+});
+filtroNotificacoesTipo.addEventListener("change", () => {
+    exibirTodasNotificacoes = false;
+    renderizarNotificacoesDisponibilidade();
+});
+filtroNotificacoesMes.addEventListener("change", () => {
+    exibirTodasNotificacoes = false;
+    renderizarNotificacoesDisponibilidade();
+});
+btnVerTodasNotificacoes.addEventListener("click", () => {
+    exibirTodasNotificacoes = !exibirTodasNotificacoes;
+    renderizarNotificacoesDisponibilidade();
+});
+btnExportarNotificacoes.addEventListener("click", () => {
+    const linhas = obterAlertasDisponibilidadeFiltrados().map((alerta) => [
+        alerta.data,
+        obterTipoAlertaDisponibilidade(alerta),
+        alerta.situacao || "",
+        alerta.total,
+        alerta.horasDisponiveis,
+        alerta.atualizadoEm || ""
+    ]);
+    const escaparCsv = (valor) => `"${String(valor ?? "").replace(/"/g, '""')}"`;
+    const csv = [["Data", "Tipo", "Situação", "Horas lançadas", "Horas disponíveis", "Atualizado em"], ...linhas]
+        .map((linha) => linha.map(escaparCsv).join(";"))
+        .join("\r\n");
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    link.download = `revisoes-disponibilidade-${usuarioAtual?.matricula || "colaborador"}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+});
+btnEntendiRevisoes.addEventListener("click", () => {
+    avisoRevisoesDisponibilidade.hidden = true;
+    if (usuarioAtual) {
+        localStorage.setItem(`ciencia-revisoes:${usuarioAtual.matricula}`, new Date().toISOString());
+    }
+    chavesAlertasNovos.clear();
+    renderizarNotificacoesDisponibilidade();
+    btnNotificacoesDisponibilidade.focus();
+});
+document.addEventListener("click", (event) => {
+    if (!notificacoesDisponibilidade.contains(event.target) && !avisoRevisoesDisponibilidade.contains(event.target)) {
+        fecharPainelNotificacoes();
+    }
+});
+window.addEventListener("focus", () => {
+    if (usuarioAtual && Date.now() - ultimaConsultaAlertasEm > 60000) {
+        consultarAlertasDisponibilidade(usuarioAtual);
+    }
+});
 
 function exigirLogin() {
     const loginSalvo = obterLoginSalvo();
@@ -1162,6 +1379,12 @@ function entrarLoginPendente() {
 function sairLogin() {
     localStorage.removeItem(LOGIN_CHAVE);
     usuarioAtual = null;
+    alertasDisponibilidadeAtuais = [];
+    chavesAlertasNovos = new Set();
+    exibirTodasNotificacoes = false;
+    notificacoesDisponibilidade.hidden = true;
+    avisoRevisoesDisponibilidade.hidden = true;
+    fecharPainelNotificacoes();
     loginNomeInput.value = "";
     loginMatriculaInput.value = "";
     novoLoginNomeInput.value = "";
@@ -1978,6 +2201,30 @@ function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
 }
 
+function criarDescricaoAlertaDisponibilidade(alerta, lancamentoExistente = false) {
+    const data = formatarData(alerta.data);
+    const total = formatarHoras(alerta.total);
+    const introducao = lancamentoExistente ? `Foram lançadas ${total}` : `O total será ${total}`;
+    const situacao = normalizarTexto(alerta.situacao);
+
+    if (situacao.includes("ferias")) return `No dia ${data}, você estava de férias. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("afastamento")) return `No dia ${data}, você estava afastado. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("atestado")) return `No dia ${data}, você estava de atestado. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("falta")) return `No dia ${data}, consta uma falta para você. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("sem horas")) {
+        const ehSabado = new Date(`${alerta.data}T00:00:00Z`).getUTCDay() === 6;
+        return ehSabado
+            ? `Você não possui presença registrada no sábado, dia ${data}. Não é possível lançar TFMs nesse dia. Contate seu líder em caso de divergência.`
+            : `Você não possui horas disponíveis no dia ${data}. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    }
+
+    if (alerta.situacao) {
+        return `${introducao} no dia ${data}, mas essa data está registrada como ${alerta.situacao}.`;
+    }
+
+    return `${introducao} no dia ${data}, acima das ${formatarHoras(alerta.horasDisponiveis)} disponíveis.`;
+}
+
 function criarLancamentosVerificacaoApontamento(dados) {
     const lancamentos = (dados.distribuicaoDiaria || []).map((item) => ({
         nome: dados.nome,
@@ -2016,20 +2263,22 @@ function fecharConfirmacaoLimiteHoras(confirmado) {
     resolver(confirmado);
 }
 
-function abrirConfirmacaoLimiteHoras(datas = []) {
-    const datasUnicas = [...new Set(datas)].sort();
-    if (datasUnicas.length === 1) {
-        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis no dia ${formatarData(datasUnicas[0])}. Deseja continuar mesmo assim?`;
-    } else if (datasUnicas.length > 1) {
-        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis nos dias ${datasUnicas.map(formatarData).join(", ")}. Deseja continuar mesmo assim?`;
+function abrirConfirmacaoLimiteHoras(alertas = []) {
+    const bloqueado = alertas.some((alerta) => converterHorasNumero(alerta.horasDisponiveis) <= 0 || String(alerta.situacao || "").trim());
+    if (alertas.length) {
+        textoLimiteHoras.textContent = `${alertas.map((alerta) => criarDescricaoAlertaDisponibilidade(alerta)).join(" ")} ${bloqueado ? "O lançamento foi bloqueado." : "Deseja continuar mesmo assim?"}`;
     } else {
         textoLimiteHoras.textContent = "Este lançamento ultrapassará as horas disponíveis do colaborador. Deseja continuar mesmo assim?";
     }
 
+    tituloLimiteHoras.textContent = bloqueado ? "Lançamento não permitido" : "Horas disponíveis serão ultrapassadas";
+    btnContinuarLimiteHoras.hidden = bloqueado;
+    btnCancelarLimiteHoras.textContent = bloqueado ? "Entendi" : "Cancelar";
+
     focoAntesConfirmacaoLimite = document.activeElement;
     modalLimiteHoras.hidden = false;
     document.body.classList.add("modal-limite-horas-aberto");
-    btnContinuarLimiteHoras.focus();
+    (bloqueado ? btnCancelarLimiteHoras : btnContinuarLimiteHoras).focus();
 
     return new Promise((resolver) => {
         resolverConfirmacaoLimiteHoras = resolver;
@@ -2066,7 +2315,7 @@ async function confirmarLimiteDiario(lancamentos, opcoes = {}) {
         return true;
     }
 
-    return abrirConfirmacaoLimiteHoras(opcoes.mostrarDatas ? resultado.alertas.map((item) => item.data) : []);
+    return abrirConfirmacaoLimiteHoras(resultado.alertas);
 }
 
 function mostrarFeedbackPainel(elemento, mensagem, tipo = "sucesso") {
@@ -2227,6 +2476,7 @@ async function adicionarHorasAoTfm(event) {
         await carregarTfmsAbertos();
         formHorasTfmAberto.hidden = true;
         mostrarFeedback("Horas adicionadas ao TFM em andamento.", "sucesso");
+        await consultarAlertasDisponibilidade(usuarioAtual);
     } catch (erro) {
         mostrarFeedbackPainel(horasTfmFeedback, erro.message, "erro");
     } finally {
@@ -2267,6 +2517,7 @@ async function finalizarTfmAberto(tfm) {
         mostrarFeedback(`TFM ${tfm} finalizado. ${resultado.linhasTransferidas} lançamento(s) enviado(s) ao BI.`, "sucesso");
         await carregarTfmsAbertos();
         await carregarDesempenhoColaborador();
+        await consultarAlertasDisponibilidade(usuarioAtual);
     } catch (erro) {
         mostrarFeedback(erro.message, "erro");
     }
@@ -3480,6 +3731,9 @@ async function salvarApontamentoConfirmado() {
         limparColaboradoresAdicionais();
         linhaEditando = null; // Limpar a informação de edição
         await carregarHistoricoPlanilha();
+        if (usuarioAtual) {
+            await consultarAlertasDisponibilidade(usuarioAtual);
+        }
     } catch (erro) {
         pararAnimacaoSalvamento();
         mostrarErroSalvamento(erro.message || "Erro ao salvar!");
@@ -3569,6 +3823,20 @@ document.querySelectorAll(".app-nav-btn[data-app-tab]").forEach((botao) => {
     botao.addEventListener("click", () => {
         alternarAppTab(botao.dataset.appTab);
     });
+});
+
+document.getElementById("btn-bi-oficina")?.addEventListener("click", () => {
+    avisoBiOficina.hidden = false;
+});
+
+btnFecharAvisoBiOficina?.addEventListener("click", () => {
+    avisoBiOficina.hidden = true;
+});
+
+avisoBiOficina?.addEventListener("click", (event) => {
+    if (event.target === avisoBiOficina) {
+        avisoBiOficina.hidden = true;
+    }
 });
 
 temposPadraoBusca?.addEventListener("input", renderizarTemposPadrao);

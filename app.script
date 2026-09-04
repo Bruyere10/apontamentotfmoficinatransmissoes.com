@@ -1,12 +1,13 @@
 const CONFIG = {
-  planilhaId: "1B_ER15kHjnoiRcVNeVL6UVsbD-6tttgiKr4Ph22SHeo",
+  planilhaId: "1i76sjZAn0mi6KikkfAsFJtQYv7mnuiq0ESM3a-QRELw",
   nomeAba: "Página1",
   nomeAbaTfmsAbertos: "TFMs Abertos",
   nomeAbaDadosComplementares: "Dados Complementares",
   nomeAbaCodigos: "Códigos",
+  nomeAbaDisponibilidade: "Disponibilidade Diária",
   emailAnexosDestino: "SG49872@stellantis.com",
-  assuntoEmailAnexos: "ANEXO_APONTAMENTO_TFM",
-  linkPastaAnexos: "https://shiftup-my.sharepoint.com/:f:/g/personal/sg49872_stellantis_com/IgDxzGY1IAPwTYN1uhem8RKKAYlMmhuHFkPMGI7LKben0e4?e=HpeW7Y"
+  assuntoEmailAnexos: "ANEXO_APONTAMENTO_TFM_TRANSMISSOES",
+  linkPastaAnexos: "https://shiftup-my.sharepoint.com/:f:/g/personal/sg49872_stellantis_com/IgCdEhIERGwMT6hFPi3_c0G9ASZVimclp7CDlt8rau5q4Rg"
 };
 
 const CABECALHOS = [
@@ -57,6 +58,15 @@ const CABECALHOS_TFMS_ABERTOS = [
   "HORAS ADICIONAIS",
   "NOMES AUTORIZADOS",
   "MATRÍCULAS AUTORIZADAS"
+];
+
+const CABECALHOS_DISPONIBILIDADE = [
+  "DATA",
+  "NOME",
+  "MATRÍCULA",
+  "HORAS DISPONÍVEIS",
+  "SITUAÇÃO",
+  "ATUALIZADO EM"
 ];
 
 function autorizarEnvioEmail() {
@@ -457,6 +467,16 @@ function doGet(evento) {
       return responderJson(buscarDesempenhoColaborador(matricula));
     }
 
+    if (parametros.acao === "alertasDisponibilidade") {
+      const matricula = String(parametros.matricula || "").trim();
+
+      if (!matricula) {
+        return responderJson({ sucesso: false, erro: "Informe a matricula do colaborador." });
+      }
+
+      return responderJson({ sucesso: true, alertas: buscarAlertasDisponibilidade(matricula) });
+    }
+
     if (parametros.acao === "listarTfmsAbertos") {
       const matricula = String(parametros.matricula || "").trim();
 
@@ -614,7 +634,6 @@ function converterHorasNumero(valor) {
 }
 
 function verificarLimiteHoras(dados) {
-  const limite = 9;
   const recebidos = Array.isArray(dados.lancamentos) ? dados.lancamentos : [];
   const tfmIgnorado = String(dados.tfmIgnorado || "").trim();
   const novosPorChave = {};
@@ -643,8 +662,10 @@ function verificarLimiteHoras(dados) {
 
   const chaves = Object.keys(novosPorChave);
   if (!chaves.length) {
-    return responderJson({ sucesso: true, alertas: [], limite });
+    return responderJson({ sucesso: true, alertas: [] });
   }
+
+  const disponibilidades = obterDisponibilidadesDiarias(new Set(chaves));
 
   const chavesBuscadas = new Set(chaves);
   const planilha = obterAbaPrincipal();
@@ -695,17 +716,155 @@ function verificarLimiteHoras(dados) {
     const item = novosPorChave[chave];
     const horasExistentes = Number(item.horasExistentes.toFixed(2));
     const horasNovas = Number(item.horasNovas.toFixed(2));
+    const disponibilidade = disponibilidades.get(chave);
     return {
       nome: item.nome,
       matricula: item.matricula,
       data: item.data,
       horasExistentes,
       horasNovas,
-      total: Number((horasExistentes + horasNovas).toFixed(2))
+      total: Number((horasExistentes + horasNovas).toFixed(2)),
+      horasDisponiveis: disponibilidade?.horasDisponiveis,
+      situacao: disponibilidade?.situacao || "",
+      tipo: classificarTipoDisponibilidade(disponibilidade),
+      atualizadoEm: disponibilidade?.atualizadoEm || ""
     };
-  }).filter((item) => item.total > limite);
+  }).filter((item) => item.horasDisponiveis !== undefined && item.total > item.horasDisponiveis);
 
-  return responderJson({ sucesso: true, alertas, limite });
+  return responderJson({ sucesso: true, alertas });
+}
+
+function obterAbaDisponibilidade() {
+  const arquivo = obterArquivoPlanilha();
+  const aba = arquivo.getSheetByName(CONFIG.nomeAbaDisponibilidade) || arquivo.insertSheet(CONFIG.nomeAbaDisponibilidade);
+
+  if (aba.getLastRow() === 0) {
+    aba.getRange(1, 1, 1, CABECALHOS_DISPONIBILIDADE.length).setValues([CABECALHOS_DISPONIBILIDADE]);
+  } else {
+    garantirCabecalhos(aba, CABECALHOS_DISPONIBILIDADE);
+  }
+
+  return aba;
+}
+
+function obterDisponibilidadesDiarias(chavesBuscadas) {
+  const disponibilidades = new Map();
+  const dados = obterAbaDisponibilidade().getDataRange().getValues();
+  const cabecalhos = dados[0] || [];
+  const colunaData = obterIndiceCabecalho(cabecalhos, ["Data"]);
+  const colunaMatricula = obterIndiceCabecalho(cabecalhos, ["Matricula", "Matrícula"]);
+  const colunaHoras = obterIndiceCabecalho(cabecalhos, ["Horas Disponiveis", "Horas Disponíveis", "Disponibilidade"]);
+  const colunaSituacao = obterIndiceCabecalho(cabecalhos, ["Situacao", "Situação", "Motivo"]);
+  const colunaAtualizadoEm = obterIndiceCabecalho(cabecalhos, ["Atualizado Em", "Atualizado em", "Atualização"]);
+
+  if (colunaData < 0 || colunaMatricula < 0 || colunaHoras < 0) {
+    return disponibilidades;
+  }
+
+  dados.slice(1).forEach((linha) => {
+    const matricula = String(linha[colunaMatricula] || "").trim();
+    const data = normalizarValorPlanilha(linha[colunaData]);
+    const chave = `${matricula}|${data}`;
+
+    if (matricula && /^\d{4}-\d{2}-\d{2}$/.test(data) && (!chavesBuscadas || chavesBuscadas.has(chave))) {
+      disponibilidades.set(chave, {
+        horasDisponiveis: converterHorasNumero(linha[colunaHoras]),
+        situacao: colunaSituacao >= 0 ? String(linha[colunaSituacao] || "").trim() : "",
+        atualizadoEm: colunaAtualizadoEm >= 0 ? normalizarDataHoraPlanilha(linha[colunaAtualizadoEm]) : ""
+      });
+    }
+  });
+
+  return disponibilidades;
+}
+
+function buscarAlertasDisponibilidade(matricula) {
+  const matriculaBusca = String(matricula || "").trim();
+  const totais = new Map();
+  const nomes = new Map();
+  const adicionarHoras = (data, horas, nome) => {
+    const dataNormalizada = normalizarValorPlanilha(data);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataNormalizada)) return;
+    const chave = `${matriculaBusca}|${dataNormalizada}`;
+    totais.set(chave, (totais.get(chave) || 0) + converterHorasNumero(horas));
+    if (nome) nomes.set(chave, String(nome).trim());
+  };
+
+  const dadosPrincipais = obterAbaPrincipal().getDataRange().getValues();
+  const cabecalhosPrincipais = dadosPrincipais[0] || [];
+  const colunaData = obterIndiceCabecalho(cabecalhosPrincipais, ["Data"]);
+  const colunaNome = obterIndiceCabecalho(cabecalhosPrincipais, ["Nome"]);
+  const colunaMatricula = obterIndiceCabecalho(cabecalhosPrincipais, ["Matricula", "Matrícula"]);
+  const colunaHoras = obterIndiceCabecalho(cabecalhosPrincipais, ["Horas", "Horas Trabalhadas"]);
+
+  if (colunaData >= 0 && colunaMatricula >= 0 && colunaHoras >= 0) {
+    dadosPrincipais.slice(1).forEach((linha) => {
+      if (String(linha[colunaMatricula] || "").trim() === matriculaBusca) {
+        adicionarHoras(linha[colunaData], linha[colunaHoras], colunaNome >= 0 ? linha[colunaNome] : "");
+      }
+    });
+  }
+
+  const dadosAbertos = obterAbaTfmsAbertos().getDataRange().getValues();
+  const cabecalhosAbertos = dadosAbertos[0] || [];
+  const colunaStatusAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Status"]);
+  const colunaDataAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Data Trabalhada"]);
+  const colunaNomeAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Nome do Colaborador"]);
+  const colunaMatriculaAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Matricula do Colaborador", "Matrícula do Colaborador"]);
+  const colunaHorasAberto = obterIndiceCabecalho(cabecalhosAbertos, ["Horas"]);
+  const colunaHorasAdicionais = obterIndiceCabecalho(cabecalhosAbertos, ["Horas Adicionais"]);
+
+  if (colunaStatusAberto >= 0 && colunaDataAberto >= 0 && colunaMatriculaAberto >= 0) {
+    dadosAbertos.slice(1).forEach((linha) => {
+      if (String(linha[colunaStatusAberto] || "").trim().toUpperCase() !== "EM ANDAMENTO"
+          || String(linha[colunaMatriculaAberto] || "").trim() !== matriculaBusca) return;
+      const nome = colunaNomeAberto >= 0 ? linha[colunaNomeAberto] : "";
+      adicionarHoras(linha[colunaDataAberto], colunaHorasAberto >= 0 ? linha[colunaHorasAberto] : 0, nome);
+      adicionarHoras(linha[colunaDataAberto], colunaHorasAdicionais >= 0 ? linha[colunaHorasAdicionais] : 0, nome);
+    });
+  }
+
+  const chaves = new Set(totais.keys());
+  const disponibilidades = obterDisponibilidadesDiarias(chaves);
+
+  return Array.from(chaves).map((chave) => {
+    const partes = chave.split("|");
+    const disponibilidade = disponibilidades.get(chave);
+    return {
+      nome: nomes.get(chave) || "",
+      matricula: partes[0],
+      data: partes[1],
+      total: Number((totais.get(chave) || 0).toFixed(2)),
+      horasDisponiveis: disponibilidade?.horasDisponiveis,
+      situacao: disponibilidade?.situacao || "",
+      tipo: classificarTipoDisponibilidade(disponibilidade),
+      atualizadoEm: disponibilidade?.atualizadoEm || ""
+    };
+  }).filter((item) => item.horasDisponiveis !== undefined && item.total > 9)
+    .sort((primeiro, segundo) => segundo.data.localeCompare(primeiro.data));
+}
+
+function classificarTipoDisponibilidade(disponibilidade) {
+  const situacao = String(disponibilidade?.situacao || "").trim().toLowerCase();
+  const situacaoNormalizada = situacao.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  if (/ferias|afastado|atestado|falta/.test(situacaoNormalizada)) {
+    return "ausencia";
+  }
+
+  if (/sem horas|nao informad|nao preenchid|pendente/.test(situacaoNormalizada)) {
+    return "nao-informada";
+  }
+
+  return "excesso";
+}
+
+function normalizarDataHoraPlanilha(valor) {
+  if (Object.prototype.toString.call(valor) === "[object Date]" && !Number.isNaN(valor.getTime())) {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+  }
+
+  return String(valor == null ? "" : valor).trim();
 }
 
 function normalizarValorPlanilha(valor) {

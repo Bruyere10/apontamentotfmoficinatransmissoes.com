@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycpTr1Vj5nCByX2gYKvaXnhw7EiBUYqlnRq7ClSoqr2ZNBNvAUqvW2br6ksyAJDcxO/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxghyPXviuoKUSM2Yf7cIPTI9XEiomzyQJ1Z-yllIEra-0fehMC9BLx1GAuu1EX5cL9/exec";
 const LOGIN_CHAVE = "stellantisUsuarioLogado";
 
 const usuarioAtual = obterLoginSalvo();
@@ -64,6 +64,8 @@ const btnSalvarEditarLancamentos = document.getElementById("btn-salvar-editar-la
 const modalCancelarTfm = document.getElementById("modal-cancelar-tfm");
 const modalLimiteHoras = document.getElementById("modal-limite-horas");
 const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-horas");
+const btnCancelarLimiteHoras = modalLimiteHoras.querySelector(".modal-limite-horas-cancelar");
+const tituloLimiteHoras = document.getElementById("modal-limite-horas-titulo");
 const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
 const cancelarTfmNumero = document.getElementById("cancelar-tfm-numero");
 const cancelarTfmConfirmacao = document.getElementById("cancelar-tfm-confirmacao");
@@ -96,7 +98,15 @@ let resolverConfirmacaoLimiteHoras = null;
 let focoAntesConfirmacaoLimite = null;
 let colaboradoresAutorizados = [];
 const colaboradores = [
-    { matricula: "87033", nome: "Leonel Barros Pereira Da Silva" }, { matricula: "61449", nome: "Ailton Dos Reis Santana" }, { matricula: "61618", nome: "Airton Fonseca do Nascimento" }, { matricula: "90079", nome: "Albert de Almeida Libério" }, { matricula: "61557", nome: "Aldecir de Oliveira Chaves" }, { matricula: "105741", nome: "Caio Resende Soares" }, { matricula: "61526", nome: "Cláudio Roberto Miranda" }, { matricula: "61461", nome: "Cleiton De Souza" }, { matricula: "61221", nome: "Ecelson Miranda" }, { matricula: "61604", nome: "Edilson Ribeiro de Andrade" }, { matricula: "81531", nome: "Fabio Henrique Alves Ventura" }, { matricula: "61134", nome: "Franklin de Jesus Souza" }, { matricula: "70980", nome: "Geraldo Marçal Da Silva" }, { matricula: "60738", nome: "Gustavo da Silva Amaral" }, { matricula: "62011", nome: "João Paulo de Rezende Trindade" }, { matricula: "83661", nome: "José Edson Martins Coelho" }, { matricula: "91542", nome: "José Egídio Rocha" }, { matricula: "60884", nome: "José Roberto Souza Franco" }, { matricula: "91541", nome: "Paulo Roberto Ferreira" }, { matricula: "63277", nome: "Renato Fagner Foureaux" }, { matricula: "61313", nome: "Renis Mendes Goulart" }, { matricula: "66642", nome: "Ricardo da Silva Matos" }, { matricula: "61834", nome: "Roberto Carlos Vieira Martins" }, { matricula: "60551", nome: "Rodolfo Ribeiro Martins" }, { matricula: "66647", nome: "Romeu Malagoli dos Santos" }, { matricula: "61091", nome: "Sebastião Dirino Correia" }, { matricula: "61367", nome: "Sueimer Batista Pereira" }, { matricula: "61938", nome: "Wender Bortoloto da Costa" }, { matricula: "61124", nome: "Valdemi Amancio Do Nascimento" }, { matricula: "215640", nome: "Renato Basílio dos Santos Júnior" }, { matricula: "208408", nome: "Rafael da Silva Moreira" }
+    { matricula: "60597", nome: "Anderson Parreiras" },
+    { matricula: "61557", nome: "Aldecir de Oliveira Chaves" },
+    { matricula: "61238", nome: "Alexandre Guimaraes" },
+    { matricula: "61680", nome: "Davis Ribeiro" },
+    { matricula: "60935", nome: "Mauricio Alves Marinho" },
+    { matricula: "60957", nome: "Miguel Ângelo Soares" },
+    { matricula: "207597", nome: "Gustavo Zorzam Santos" },
+    { matricula: "206373", nome: "Nathan Junio Morato" },
+    { matricula: "61410", nome: "Rubens Hemogenes" }
 ];
 
 function obterLoginSalvo() {
@@ -327,6 +337,29 @@ function formatarHoras(valor) {
     return `${Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}h`;
 }
 
+function criarDescricaoAlertaDisponibilidade(alerta) {
+    const data = formatarData(alerta.data);
+    const total = formatarHoras(alerta.total);
+    const situacao = normalizarTexto(alerta.situacao);
+
+    if (situacao.includes("ferias")) return `No dia ${data}, você estava de férias. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("afastamento")) return `No dia ${data}, você estava afastado. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("atestado")) return `No dia ${data}, você estava de atestado. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("falta")) return `No dia ${data}, consta uma falta para você. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    if (situacao.includes("sem horas")) {
+        const ehSabado = new Date(`${alerta.data}T00:00:00Z`).getUTCDay() === 6;
+        return ehSabado
+            ? `Você não possui presença registrada no sábado, dia ${data}. Não é possível lançar TFMs nesse dia. Contate seu líder em caso de divergência.`
+            : `Você não possui horas disponíveis no dia ${data}. Não é possível lançar TFMs nessa data. Contate seu líder em caso de divergência.`;
+    }
+
+    if (alerta.situacao) {
+        return `O total será ${total} no dia ${data}, mas essa data está registrada como ${alerta.situacao}.`;
+    }
+
+    return `O total será ${total} no dia ${data}, acima das ${formatarHoras(alerta.horasDisponiveis)} disponíveis.`;
+}
+
 function fecharConfirmacaoLimiteHoras(confirmado) {
     if (!resolverConfirmacaoLimiteHoras) {
         return;
@@ -341,20 +374,22 @@ function fecharConfirmacaoLimiteHoras(confirmado) {
     resolver(confirmado);
 }
 
-function abrirConfirmacaoLimiteHoras(datas = []) {
-    const datasUnicas = [...new Set(datas)].sort();
-    if (datasUnicas.length === 1) {
-        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis no dia ${formatarData(datasUnicas[0])}. Deseja continuar mesmo assim?`;
-    } else if (datasUnicas.length > 1) {
-        textoLimiteHoras.textContent = `Este TFM ultrapassará as horas disponíveis nos dias ${datasUnicas.map(formatarData).join(", ")}. Deseja continuar mesmo assim?`;
+function abrirConfirmacaoLimiteHoras(alertas = []) {
+    const bloqueado = alertas.some((alerta) => converterHorasNumero(alerta.horasDisponiveis) <= 0 || String(alerta.situacao || "").trim());
+    if (alertas.length) {
+        textoLimiteHoras.textContent = `${alertas.map((alerta) => criarDescricaoAlertaDisponibilidade(alerta)).join(" ")} ${bloqueado ? "O lançamento foi bloqueado." : "Deseja continuar mesmo assim?"}`;
     } else {
         textoLimiteHoras.textContent = "Este lançamento ultrapassará as horas disponíveis do colaborador. Deseja continuar mesmo assim?";
     }
 
+    tituloLimiteHoras.textContent = bloqueado ? "Lançamento não permitido" : "Horas disponíveis serão ultrapassadas";
+    btnContinuarLimiteHoras.hidden = bloqueado;
+    btnCancelarLimiteHoras.textContent = bloqueado ? "Entendi" : "Cancelar";
+
     focoAntesConfirmacaoLimite = document.activeElement;
     modalLimiteHoras.hidden = false;
     document.body.classList.add("modal-limite-horas-aberto");
-    btnContinuarLimiteHoras.focus();
+    (bloqueado ? btnCancelarLimiteHoras : btnContinuarLimiteHoras).focus();
 
     return new Promise((resolver) => {
         resolverConfirmacaoLimiteHoras = resolver;
@@ -391,7 +426,7 @@ async function confirmarLimiteDiario(lancamentos, opcoes = {}) {
         return true;
     }
 
-    return abrirConfirmacaoLimiteHoras(opcoes.mostrarDatas ? resultado.alertas.map((item) => item.data) : []);
+    return abrirConfirmacaoLimiteHoras(resultado.alertas);
 }
 
 function mostrarFeedback(elemento, mensagem, tipo = "sucesso") {
