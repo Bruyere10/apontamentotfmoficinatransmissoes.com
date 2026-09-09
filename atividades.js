@@ -59,5 +59,7 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Descarte de pneus",
     "Acompanhar o analista no momento de aquisição de medições de comando de câmbio",
     "Preparação do carro para medição de comando",
-    "Preparar veículo para rodagem de prova no ciclo Ama para validação de engrenagens"
+    "Preparar veículo para rodagem de prova no ciclo Ama para validação de engrenagens",
+    "Retirar slip ring da instrumentação do semi-eixo",
+    "Recolocar slip ring da instrumentação do semi-eixo"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));

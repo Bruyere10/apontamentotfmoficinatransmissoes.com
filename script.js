@@ -59,7 +59,9 @@ const atividadesDisponiveisLegado = [
     "Descarte de pneus",
     "Acompanhar o analista no momento de aquisição de medições de comando de câmbio",
     "Preparação do carro para medição de comando",
-    "Preparar veículo para rodagem de prova no ciclo Ama para validação de engrenagens"
+    "Preparar veículo para rodagem de prova no ciclo Ama para validação de engrenagens",
+    "Retirar slip ring da instrumentação do semi-eixo",
+    "Recolocar slip ring da instrumentação do semi-eixo"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -257,6 +259,7 @@ const colaboradores = [
     { matricula: "60597", nome: "Anderson Parreiras" },
     { matricula: "61557", nome: "Aldecir de Oliveira Chaves" },
     { matricula: "61238", nome: "Alexandre Guimaraes" },
+    { matricula: "105741", nome: "Caio Resende Soares" },
     { matricula: "61680", nome: "Davis Ribeiro" },
     { matricula: "60935", nome: "Mauricio Alves Marinho" },
     { matricula: "60957", nome: "Miguel Ângelo Soares" },
