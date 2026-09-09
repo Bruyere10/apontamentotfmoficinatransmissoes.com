@@ -1,18 +1,19 @@
 (() => {
     const helpPages = {
         "registrar-tfm.html": {
-            title: "Como registrar e acompanhar um TFM",
-            intro: "Use este guia ao registrar um trabalho que ainda não foi concluído. O TFM permanece em andamento até o host finalizá-lo; as horas registradas aparecem no desempenho como <strong>Em andamento</strong>.",
+            title: "Como registrar e acompanhar um TFM em andamento",
+            intro: "Use esta área somente para registrar um TFM que demanda acompanhamento e ainda está em andamento. O TFM permanece aberto até o host ou um colaborador autorizado finalizá-lo; as horas registradas aparecem no desempenho como <strong>Em andamento</strong>.",
             content: `
         <div class="site-help-steps">
-            <article class="site-help-step"><span>1</span><div><strong>Acesse Registrar TFM</strong><p>Entre com sua matrícula e escolha <em>Registrar TFM</em> no menu. Somente um colaborador será o host, responsável por abrir, acompanhar e finalizar o TFM.</p></div></article>
+            <article class="site-help-step"><span>1</span><div><strong>Acesse Registrar TFM em andamento</strong><p>Entre com sua matrícula e escolha <em>Registrar TFM em andamento</em> no menu. Use essa opção quando o trabalho ainda não terminou e precisará receber novos lançamentos. Um colaborador será o host, responsável por abrir e acompanhar o TFM.</p></div></article>
             <article class="site-help-step"><span>2</span><div><strong>Informe os dados iniciais</strong><p>Preencha data inicial, turno, número do TFM com 6 dígitos, projeto quando houver, atividade inicial e as horas já trabalhadas. Nome e matrícula são preenchidos pelo acesso e não devem ser alterados.</p></div></article>
-            <article class="site-help-step"><span>3</span><div><strong>Registrar o TFM</strong><p>Clique em <em>Registrar TFM em andamento</em>. O trabalho ficará na lista de TFMs em andamento e ainda não será enviado ao banco principal nem ao BI.</p></div></article>
+            <article class="site-help-step"><span>3</span><div><strong>Registre o TFM em andamento</strong><p>Clique em <em>Registrar TFM em andamento</em>. O trabalho ficará na lista de TFMs em andamento e ainda não será enviado ao banco principal nem ao BI.</p></div></article>
             <article class="site-help-step"><span>4</span><div><strong>Registre horas a cada dia</strong><p>Na aba <em>TFMs em andamento</em>, o host Registra o TFM e usa <em>Editar calendário</em> para incluir a data, a atividade, as horas e a observação. Inclua colaboradores adicionais somente quando eles também participaram daquele lançamento.</p></div></article>
             <article class="site-help-step"><span>5</span><div><strong>Confira os indicadores</strong><p>As horas de um TFM registrado aparecem nos calendários e no Geral da Oficina identificadas como horas em andamento. Elas não substituem nem duplicam as horas de TFMs já finalizados.</p></div></article>
             <article class="site-help-step"><span>6</span><div><strong>Finalize somente quando concluir</strong><p>Quando todo o trabalho estiver encerrado, o host seleciona <em>Finalizar TFM</em>, revisa os lançamentos e confirma. Nesse momento as horas deixam de estar em andamento e passam para os registros concluídos do banco de dados.</p></div></article>
             <article class="site-help-step"><span>7</span><div><strong>Evite problemas no lançamento</strong><p>Use ponto nas horas decimais, por exemplo 7.5. Não resgistre o mesmo número de TFM duas vezes. Se houver erro, informe o número do TFM, a data e a matrícula ao responsável antes de finalizar.</p></div></article>
         </div>
+        <p class="site-help-note"><strong>Atenção:</strong> se o trabalho já estiver concluído e não precisar de acompanhamento, use <em>Registrar TFM finalizado</em> na página inicial. Nesta área, registre apenas TFMs que ainda estão em andamento.</p>
         <p class="site-help-note"><strong>Importante:</strong> o host pode autorizar colaboradores a editar, finalizar ou cancelar o TFM sem lançar horas para eles. Colaboradores que trabalharam na atividade devem ser incluídos separadamente no lançamento diário, com suas próprias horas.</p>`
         },
         "meu-desempenho.html": {
@@ -49,9 +50,9 @@
             content: `
                 <div class="site-help-steps">
                     <article class="site-help-step"><span>1</span><div><strong>Acesse o sistema</strong><p>Informe seu nome e matrícula. Caso seu nome não esteja na lista, use a opção de cadastro pendente.</p></div></article>
-                    <article class="site-help-step"><span>2</span><div><strong>Registre um TFM fechado</strong><p>Preencha as datas, turno, número do TFM, atividades, horas e colaboradores adicionais antes de salvar.</p></div></article>
+                    <article class="site-help-step"><span>2</span><div><strong>Registre um TFM finalizado</strong><p>Use <em>Registrar TFM finalizado</em> quando o trabalho já estiver concluído e não precisar receber novos lançamentos. Preencha as datas, turno, número do TFM, atividades, horas e colaboradores adicionais antes de salvar.</p></div></article>
                     <article class="site-help-step"><span>3</span><div><strong>Consulte um TFM</strong><p>Abra a aba Consultar TFM para localizar registros e documentos associados.</p></div></article>
-                    <article class="site-help-step"><span>4</span><div><strong>Use Registrar TFM para trabalhos contínuos</strong><p>Essa área é destinada a trabalhos que ainda estão em andamento e serão finalizados pelo host.</p></div></article>
+                    <article class="site-help-step"><span>4</span><div><strong>Registre trabalhos em andamento</strong><p>Use <em>Registrar TFM em andamento</em> quando o trabalho demanda acompanhamento, ainda não terminou e receberá novos lançamentos até ser finalizado pelo host ou por um colaborador autorizado.</p></div></article>
                     <article class="site-help-step"><span>5</span><div><strong>Acompanhe os indicadores</strong><p>Meu Desempenho mostra seus registros individuais, enquanto Geral da Oficina apresenta os dados consolidados da equipe.</p></div></article>
                     <article class="site-help-step"><span>6</span><div><strong>Envie sugestões e feedback</strong><p>Use as opções do menu para sugerir atividades ou informar dúvidas, melhorias e erros do sistema.</p></div></article>
                 </div>
