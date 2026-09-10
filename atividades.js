@@ -64,5 +64,7 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Recolocar slip ring da instrumentação do semi-eixo",
     "Desmontagem câmbio C513 fim de prova balocco",
     "Reparo de pneu",
-    "Desmontagem de câmbio C513 pós prova"
+    "Desmontagem de câmbio C513 pós prova",
+    "Análise perda de torque de caixa/suporte",
+    "Substituir chicote do câmbio CVT"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));

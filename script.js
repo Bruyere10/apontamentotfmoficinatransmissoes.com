@@ -64,7 +64,9 @@ const atividadesDisponiveisLegado = [
     "Recolocar slip ring da instrumentação do semi-eixo",
     "Desmontagem câmbio C513 fim de prova balocco",
     "Reparo de pneu",
-    "Desmontagem de câmbio C513 pós prova"
+    "Desmontagem de câmbio C513 pós prova",
+    "Análise perda de torque de caixa/suporte",
+    "Substituir chicote do câmbio CVT"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -157,8 +159,6 @@ const modalColaboradorHorasInput = document.getElementById("modal-colaborador-ho
 const modalColaboradorLancamentos = document.getElementById("modal-colaborador-lancamentos");
 const btnAdicionarDiaColaborador = document.querySelector(".btn-adicionar-dia-colaborador");
 const feedbackGlobal = document.getElementById("feedback-global");
-const avisoBiOficina = document.getElementById("aviso-bi-oficina");
-const btnFecharAvisoBiOficina = document.getElementById("btn-fechar-aviso-bi-oficina");
 const resumoAtividades = document.getElementById("resumo-atividades");
 const resumoSalvos = document.getElementById("resumo-salvos");
 const resumoUltimoTfm = document.getElementById("resumo-ultimo-tfm");
@@ -3465,7 +3465,7 @@ function carregarTfmNoFormulario(dados) {
     document.getElementById("data-fim-tfm").value = dataFim;
     document.getElementById("nome").value = dados.nome || "";
     document.getElementById("matricula").value = dados.matricula || "";
-    document.getElementById("turno").value = dados.turno || "";
+    document.getElementById("turno").value = "Central";
     document.getElementById("tfm").value = dados.tfm || "";
     document.getElementById("projeto").value = dados.projeto || "";
     renderizarColaboradoresAdicionais(Array.isArray(dados.colaboradoresAdicionais) ? dados.colaboradoresAdicionais : []);
@@ -3829,20 +3829,6 @@ document.querySelectorAll(".app-nav-btn[data-app-tab]").forEach((botao) => {
     botao.addEventListener("click", () => {
         alternarAppTab(botao.dataset.appTab);
     });
-});
-
-document.getElementById("btn-bi-oficina")?.addEventListener("click", () => {
-    avisoBiOficina.hidden = false;
-});
-
-btnFecharAvisoBiOficina?.addEventListener("click", () => {
-    avisoBiOficina.hidden = true;
-});
-
-avisoBiOficina?.addEventListener("click", (event) => {
-    if (event.target === avisoBiOficina) {
-        avisoBiOficina.hidden = true;
-    }
 });
 
 temposPadraoBusca?.addEventListener("input", renderizarTemposPadrao);

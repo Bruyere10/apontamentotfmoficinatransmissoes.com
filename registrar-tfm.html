@@ -68,7 +68,7 @@
                         <div class="tfm-form-grupo-titulo"><i class="bi bi-clipboard-data"></i><div><strong>Identificação do trabalho</strong><span>Dados que identificam este TFM</span></div></div>
                         <div class="tfm-form-grupo-campos">
                             <label><span>Data inicial</span><input id="aberto-data-inicial" type="date" required></label>
-                            <label><span>Turno</span><select id="aberto-turno" required><option value="">Selecione</option><option>1º Turno</option><option>2º Turno</option><option>Administrativo</option></select></label>
+                            <label><span>Turno</span><input id="aberto-turno" type="text" value="Central" readonly aria-readonly="true"></label>
                             <label><span>Número do TFM</span><input id="aberto-tfm" type="text" maxlength="6" inputmode="numeric" placeholder="000000" required></label>
                             <label><span>Código do projeto <small>Opcional</small></span><input id="aberto-projeto" type="text" placeholder="Código do projeto"></label>
                         </div>
@@ -392,7 +392,7 @@
         </section>
     </div>
 
-    <script src="atividades.js?v=20260903-2"></script>
+    <script src="atividades.js?v=20260910-1"></script>
     <script src="registrar-tfm.js?v=20260903-5"></script>
     <script src="site-help.js"></script>
 </body>
