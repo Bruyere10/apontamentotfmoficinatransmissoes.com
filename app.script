@@ -125,6 +125,8 @@ function doPost(evento) {
 
     if (dados.linhaEditando && Number.isInteger(dados.linhaEditando) && dados.linhaEditando > 1) {
       validarResponsavelEdicao(planilha, dados);
+    } else if (tfmEstaEmAndamento(dados.tfm)) {
+      throw new Error(`O TFM ${dados.tfm} esta em andamento. Finalize-o pela tela de TFMs em andamento.`);
     }
 
     const documentos = enviarDocumentosPorEmail(dados);
@@ -1720,6 +1722,17 @@ function listarTfmsAbertos(matricula) {
   }
 
   return Object.keys(agrupados).map((tfm) => agrupados[tfm]).sort((a, b) => new Date(b.dataInicial) - new Date(a.dataInicial));
+}
+
+function tfmEstaEmAndamento(tfm) {
+  const numeroTfm = String(tfm || "").trim();
+  if (!numeroTfm) return false;
+
+  const dados = obterAbaTfmsAbertos().getDataRange().getValues();
+  return dados.slice(1).some((linha) => (
+    String(linha[0] || "").trim() === "EM ANDAMENTO"
+    && String(linha[1] || "").trim() === numeroTfm
+  ));
 }
 
 function detalharTfmAberto(tfm, matriculaHost) {

@@ -66,5 +66,16 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Reparo de pneu",
     "Desmontagem de câmbio C513 pós prova",
     "Análise perda de torque de caixa/suporte",
-    "Substituir chicote do câmbio CVT"
+    "Substituir chicote do câmbio CVT",
+    "Outras - Atividade Rápida",
+    "Outras - Atividade Curta",
+    "Outras - Atividade Média",
+    "Outras - Atividade Longa",
+    "Análise dinâmica e estática de ruído ou barulho do veículo",
+    "Análise perda de torque caixa/suporte",
+    "Troca do chicote do câmbio CVT BSG",
+    "Diagnose de PTU",
+    "Diagnose da RDU",
+    "Conferir nível de óleo da RDU",
+    "Conferir nível de óleo da PTU"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));

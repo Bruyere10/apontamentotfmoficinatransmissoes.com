@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#001E62">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="manifest" href="site.webmanifest">
-    <link rel="stylesheet" href="geral-oficina.css">
+    <link rel="stylesheet" href="geral-oficina.css?v=20260911-1">
     <link rel="stylesheet" href="site-help.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
@@ -80,6 +80,31 @@
                     <span>Atualizar dados</span>
                 </button>
             </div>
+        </section>
+
+        <section class="geral-periodo-analise" data-geral-view-content="geral" aria-labelledby="geral-periodo-titulo">
+            <div class="geral-periodo-titulo">
+                <i class="bi bi-calendar-range"></i>
+                <div>
+                    <span>Período da análise</span>
+                    <strong id="geral-periodo-titulo">Filtrar indicadores por data</strong>
+                </div>
+            </div>
+            <div class="geral-periodo-campos">
+                <label>
+                    <span>Data inicial</span>
+                    <input id="geral-periodo-inicio" type="date">
+                </label>
+                <label>
+                    <span>Data final</span>
+                    <input id="geral-periodo-fim" type="date">
+                </label>
+                <button type="button" id="btn-geral-periodo-tudo">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Todo o período</span>
+                </button>
+            </div>
+            <p id="geral-periodo-info" aria-live="polite">Carregando período disponível...</p>
         </section>
 
         <section class="oficina-resumo oficina-resumo-geral" data-geral-view-content="geral" aria-label="Resumo geral da oficina">
@@ -215,7 +240,7 @@
         </section>
     </main>
 
-    <script src="geral-oficina.js"></script>
+    <script src="geral-oficina.js?v=20260911-1"></script>
     <script src="site-help.js"></script>
 </body>
 

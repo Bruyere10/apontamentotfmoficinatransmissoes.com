@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Registro de Atividades TFM | Stellantis</title>
+    <title>Registro de Atividades TFM Oficina Transmissões | Stellantis</title>
     <meta name="description" content="Registro de atividades realizadas após a finalização do TFM.">
     <meta name="theme-color" content="#001E62">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="manifest" href="site.webmanifest">
 
-    <link rel="stylesheet" href="style.css?v=20260903-8">
+    <link rel="stylesheet" href="style.css?v=20260911-1">
     <link rel="stylesheet" href="site-help.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
@@ -1273,6 +1273,28 @@
         </section>
     </div>
 
+    <div id="modal-tfm-andamento" class="modal-tfm modal-limite-horas modal-tfm-andamento" hidden>
+        <div class="modal-tfm-backdrop" data-fechar-tfm-andamento></div>
+        <section class="modal-tfm-painel modal-limite-horas-painel" role="alertdialog" aria-modal="true" aria-labelledby="modal-tfm-andamento-titulo" aria-describedby="modal-tfm-andamento-texto">
+            <button type="button" class="modal-limite-horas-fechar" aria-label="Fechar aviso" data-fechar-tfm-andamento>
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="modal-limite-horas-conteudo">
+                <div class="modal-limite-horas-icone modal-tfm-andamento-icone"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <span>TFM em andamento</span>
+                <h2 id="modal-tfm-andamento-titulo">Não é possível fechar este TFM</h2>
+                <p id="modal-tfm-andamento-texto"></p>
+            </div>
+            <div class="modal-limite-horas-acoes">
+                <button type="button" id="btn-entendi-tfm-andamento" class="modal-limite-horas-cancelar">Entendi</button>
+                <button type="button" id="btn-ir-tfm-andamento" class="modal-limite-horas-continuar">
+                    <i class="bi bi-hourglass-split"></i>
+                    <span>Ir para TFMs em andamento</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
     <div id="modal-alertas-disponibilidade" class="modal-tfm modal-limite-horas" hidden>
         <div class="modal-tfm-backdrop" data-fechar-alertas-disponibilidade></div>
         <section class="modal-tfm-painel modal-limite-horas-painel" role="alertdialog" aria-modal="true" aria-labelledby="modal-alertas-disponibilidade-titulo" aria-describedby="modal-alertas-disponibilidade-texto">
@@ -1294,8 +1316,8 @@
         </section>
     </div>
 
-    <script src="atividades.js?v=20260910-1"></script>
-    <script src="script.js?v=20260903-10"></script>
+    <script src="atividades.js?v=20260911-1"></script>
+    <script src="script.js?v=20260911-2"></script>
     <script src="site-help.js"></script>
 </body>
 

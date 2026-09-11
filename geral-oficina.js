@@ -35,6 +35,10 @@ const geralTopAtividades = document.getElementById("geral-top-atividades");
 const distribuicaoBusca = document.getElementById("distribuicao-busca");
 const distribuicaoLimpar = document.getElementById("distribuicao-limpar");
 const distribuicaoOpcoes = document.getElementById("distribuicao-opcoes");
+const geralPeriodoInicio = document.getElementById("geral-periodo-inicio");
+const geralPeriodoFim = document.getElementById("geral-periodo-fim");
+const btnGeralPeriodoTudo = document.getElementById("btn-geral-periodo-tudo");
+const geralPeriodoInfo = document.getElementById("geral-periodo-info");
 
 let atividadesGerais = [];
 let registrosGerais = [];
@@ -325,7 +329,7 @@ function renderizarVisaoGeral(atividades) {
     const ancora = periodoFim.value || periodoCompleto.fim || formatarDataIso(new Date());
     const datasSemana = obterDatasSemana(ancora);
     const registrosPorDia = new Map();
-    registrosGerais.forEach((registro) => {
+    registrosExibidosGerais.forEach((registro) => {
         const dia = registrosPorDia.get(registro.data) || { horas: 0, tfms: new Set() };
         dia.horas += registro.horas;
         if (registro.tfm) {
@@ -489,12 +493,16 @@ function renderizarColunas(atividades) {
 function atualizarInfoPeriodo(totalRegistros, totalFiltrado) {
     if (!periodoCompleto.inicio || !periodoCompleto.fim) {
         periodoInfo.textContent = "O endpoint atual ainda não retornou datas da planilha.";
+        geralPeriodoInfo.textContent = "Nenhuma data disponível para análise.";
         return;
     }
 
     const inicioSelecionado = periodoInicio.value || periodoCompleto.inicio;
     const fimSelecionado = periodoFim.value || periodoCompleto.fim;
     periodoInfo.textContent = `${totalFiltrado} de ${totalRegistros} registro(s), de ${formatarData(inicioSelecionado)} a ${formatarData(fimSelecionado)}.`;
+    geralPeriodoInfo.textContent = `${totalFiltrado.toLocaleString("pt-BR")} registro(s) analisado(s), de ${formatarData(inicioSelecionado)} a ${formatarData(fimSelecionado)}.`;
+    geralPeriodoInicio.value = inicioSelecionado;
+    geralPeriodoFim.value = fimSelecionado;
 }
 
 function renderizarCalendario() {
@@ -567,6 +575,12 @@ function configurarPeriodoCompleto() {
     periodoFim.max = periodoCompleto.fim || "";
     periodoInicio.value = periodoCompleto.inicio || "";
     periodoFim.value = periodoCompleto.fim || "";
+    geralPeriodoInicio.min = periodoCompleto.inicio || "";
+    geralPeriodoInicio.max = periodoCompleto.fim || "";
+    geralPeriodoFim.min = periodoCompleto.inicio || "";
+    geralPeriodoFim.max = periodoCompleto.fim || "";
+    geralPeriodoInicio.value = periodoCompleto.inicio || "";
+    geralPeriodoFim.value = periodoCompleto.fim || "";
     geralMes.min = periodoCompleto.inicio ? periodoCompleto.inicio.slice(0, 7) : "";
     geralMes.max = periodoCompleto.fim ? periodoCompleto.fim.slice(0, 7) : "";
     geralMes.value = periodoCompleto.fim ? periodoCompleto.fim.slice(0, 7) : formatarDataIso(new Date()).slice(0, 7);
@@ -687,6 +701,26 @@ btnPeriodoTudo.addEventListener("click", () => {
     periodoInicio.value = periodoCompleto.inicio || "";
     periodoFim.value = periodoCompleto.fim || "";
     atualizarDashboardPorPeriodo();
+});
+btnGeralPeriodoTudo.addEventListener("click", () => {
+    periodoInicio.value = periodoCompleto.inicio || "";
+    periodoFim.value = periodoCompleto.fim || "";
+    atualizarDashboardPorPeriodo();
+});
+[geralPeriodoInicio, geralPeriodoFim].forEach((input) => {
+    input.addEventListener("change", () => {
+        if (geralPeriodoInicio.value && geralPeriodoFim.value && geralPeriodoInicio.value > geralPeriodoFim.value) {
+            if (input === geralPeriodoInicio) {
+                geralPeriodoFim.value = geralPeriodoInicio.value;
+            } else {
+                geralPeriodoInicio.value = geralPeriodoFim.value;
+            }
+        }
+
+        periodoInicio.value = geralPeriodoInicio.value;
+        periodoFim.value = geralPeriodoFim.value;
+        atualizarDashboardPorPeriodo();
+    });
 });
 geralMes.addEventListener("change", () => aplicarMesCalendario(geralMes.value));
 geralMesAnterior.addEventListener("click", () => alterarMesCalendario(-1));

@@ -66,7 +66,18 @@ const atividadesDisponiveisLegado = [
     "Reparo de pneu",
     "Desmontagem de câmbio C513 pós prova",
     "Análise perda de torque de caixa/suporte",
-    "Substituir chicote do câmbio CVT"
+    "Substituir chicote do câmbio CVT",
+    "Outras - Atividade Rápida",
+    "Outras - Atividade Curta",
+    "Outras - Atividade Média",
+    "Outras - Atividade Longa",
+    "Análise dinâmica e estática de ruído ou barulho do veículo",
+    "Análise perda de torque caixa/suporte",
+    "Troca do chicote do câmbio CVT BSG",
+    "Diagnose de PTU",
+    "Diagnose da RDU",
+    "Conferir nível de óleo da RDU",
+    "Conferir nível de óleo da PTU"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -105,6 +116,11 @@ const btnContinuarLimiteHoras = document.getElementById("btn-continuar-limite-ho
 const btnCancelarLimiteHoras = modalLimiteHoras.querySelector(".modal-limite-horas-cancelar");
 const tituloLimiteHoras = document.getElementById("modal-limite-horas-titulo");
 const textoLimiteHoras = document.getElementById("modal-limite-horas-texto");
+const modalTfmAndamento = document.getElementById("modal-tfm-andamento");
+const tituloTfmAndamento = document.getElementById("modal-tfm-andamento-titulo");
+const textoTfmAndamento = document.getElementById("modal-tfm-andamento-texto");
+const btnEntendiTfmAndamento = document.getElementById("btn-entendi-tfm-andamento");
+const btnIrTfmAndamento = document.getElementById("btn-ir-tfm-andamento");
 const modalAlertasDisponibilidade = document.getElementById("modal-alertas-disponibilidade");
 const textoAlertasDisponibilidade = document.getElementById("modal-alertas-disponibilidade-texto");
 const btnFecharAlertasDisponibilidade = document.getElementById("btn-fechar-alertas-disponibilidade");
@@ -258,6 +274,7 @@ let alertasDisponibilidadeAtuais = [];
 let chavesAlertasNovos = new Set();
 let exibirTodasNotificacoes = false;
 let ultimaConsultaAlertasEm = 0;
+let focoAntesModalTfmAndamento = null;
 const colaboradores = [
     { matricula: "60597", nome: "Anderson Parreiras" },
     { matricula: "61557", nome: "Aldecir de Oliveira Chaves" },
@@ -409,6 +426,39 @@ function mostrarFeedback(mensagem, tipo = "sucesso") {
     feedbackGlobal.className = `feedback-global ${tipo}`;
     feedbackGlobal.textContent = mensagem;
     feedbackGlobal.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function abrirModalTfmAndamento(tfm) {
+    tituloTfmAndamento.textContent = `Não é possível fechar o TFM ${tfm}`;
+    textoTfmAndamento.textContent = "Este TFM está em andamento. Para fechá-lo, acesse a área de TFMs em andamento e finalize o registro por lá.";
+    focoAntesModalTfmAndamento = document.activeElement;
+    modalTfmAndamento.hidden = false;
+    document.body.classList.add("modal-limite-horas-aberto");
+    btnEntendiTfmAndamento.focus();
+}
+
+function fecharModalTfmAndamento() {
+    modalTfmAndamento.hidden = true;
+    document.body.classList.remove("modal-limite-horas-aberto");
+    focoAntesModalTfmAndamento?.focus();
+    focoAntesModalTfmAndamento = null;
+}
+
+async function verificarTfmEmAndamento(tfm) {
+    const numeroTfm = String(tfm || "").replace(/\D/g, "").slice(0, 6);
+    const matricula = String(usuarioAtual?.matricula || "").trim();
+    const resposta = await fetch(`${SCRIPT_URL}?acao=listarTfmsAbertos&matricula=${encodeURIComponent(matricula)}&_=${Date.now()}`);
+
+    if (!resposta.ok) {
+        throw new Error("Não foi possível verificar os TFMs em andamento. Tente novamente.");
+    }
+
+    const dados = await resposta.json();
+    if (!dados.sucesso || !Array.isArray(dados.tfms)) {
+        throw new Error(dados.erro || "Não foi possível verificar os TFMs em andamento. Tente novamente.");
+    }
+
+    return dados.tfms.some((item) => String(item.tfm || "").replace(/\D/g, "") === numeroTfm);
 }
 
 function limparFeedback() {
@@ -2295,7 +2345,19 @@ modalLimiteHoras.querySelectorAll("[data-cancelar-limite-horas]").forEach((eleme
     elemento.addEventListener("click", () => fecharConfirmacaoLimiteHoras(false));
 });
 btnContinuarLimiteHoras.addEventListener("click", () => fecharConfirmacaoLimiteHoras(true));
+modalTfmAndamento.querySelectorAll("[data-fechar-tfm-andamento]").forEach((elemento) => {
+    elemento.addEventListener("click", fecharModalTfmAndamento);
+});
+btnEntendiTfmAndamento.addEventListener("click", fecharModalTfmAndamento);
+btnIrTfmAndamento.addEventListener("click", () => {
+    window.location.href = "registrar-tfm.html#andamento";
+});
 document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalTfmAndamento.hidden) {
+        fecharModalTfmAndamento();
+        return;
+    }
+
     if (event.key === "Escape" && !modalLimiteHoras.hidden) {
         fecharConfirmacaoLimiteHoras(false);
     }
@@ -3659,6 +3721,14 @@ async function salvarApontamentoConfirmado() {
     }
 
     try {
+        alterarEstadoConfirmacaoSalvamento(true, "Verificando TFM...");
+        if (await verificarTfmEmAndamento(dados.tfm)) {
+            alterarEstadoConfirmacaoSalvamento(false);
+            abrirModalTfmAndamento(dados.tfm);
+            return;
+        }
+        alterarEstadoConfirmacaoSalvamento(false);
+
         if (!linhaEditando) {
             alterarEstadoConfirmacaoSalvamento(true, "Verificando horas...");
             const continuar = await confirmarLimiteDiario(criarLancamentosVerificacaoApontamento(dados));
@@ -3687,6 +3757,10 @@ async function salvarApontamentoConfirmado() {
         const resultado = await resposta.json();
 
         if (!resultado.sucesso) {
+            if (normalizarTexto(resultado.erro).includes("tfm") && normalizarTexto(resultado.erro).includes("em andamento")) {
+                abrirModalTfmAndamento(dados.tfm);
+                return;
+            }
             throw new Error(resultado.erro || "Erro ao salvar registro.");
         }
 
@@ -4096,6 +4170,10 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalTfmAndamento.hidden) {
+        return;
+    }
+
     if (event.key === "Escape" && !resultadoBusca.hidden) {
         limparResultadoBusca();
     }

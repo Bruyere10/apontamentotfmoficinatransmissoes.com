@@ -167,6 +167,22 @@ body.tfm-modal-aberto{
     grid-template-columns:repeat(12, minmax(0, 1fr));
 }
 
+#form-colaborador-horas .tfm-form-grid,
+#form-atividade-horas .tfm-form-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+
+#form-colaborador-horas .tfm-form-grid > label,
+#form-atividade-horas .tfm-form-grid > label{
+    min-width:0;
+}
+
+#form-colaborador-horas .tfm-form-grid input,
+#form-atividade-horas .tfm-form-grid input,
+#form-atividade-horas .tfm-form-grid textarea{
+    min-width:0;
+}
+
 [data-tfm-view-content="dados"] .tfm-form-grupo{
     background:linear-gradient(180deg, #fbfdff, #f4f8fd);
     border:1px solid #d7e3f2;
@@ -1458,6 +1474,11 @@ body.modal-limite-horas-aberto{
     }
 
     .tfm-form-grid{
+        grid-template-columns:1fr;
+    }
+
+    #form-colaborador-horas .tfm-form-grid,
+    #form-atividade-horas .tfm-form-grid{
         grid-template-columns:1fr;
     }
 

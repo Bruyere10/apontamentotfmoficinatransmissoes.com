@@ -1140,6 +1140,7 @@ if (aplicarLogin()) {
     configurarBuscaAtividade(atividadeHorasNome, atividadeHorasOpcoes);
     configurarBuscaColaborador();
     configurarBuscaAutorizados();
+    if (window.location.hash === "#andamento") alternarView("andamento");
 }
 
 window.addEventListener("focus", carregarAtividadesDisponiveis);
