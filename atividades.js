@@ -77,5 +77,16 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Diagnose de PTU",
     "Diagnose da RDU",
     "Conferir nível de óleo da RDU",
-    "Conferir nível de óleo da PTU"
+    "Conferir nível de óleo da PTU",
+    "Substituir os semi-eixos da sala de prova transmissões",
+    "Desmontagem de semi-eixo",
+    "Instalar contador de ciclo",
+    "Retirar contador de ciclo",
+    "Abastecimento de veículo",
+    "Regulagem do cabo embreagem",
+    "Troca da transfer-case",
+    "Descarte da transfer-case",
+    "Retirar semi-eixo",
+    "Desmontagem de semi-eixo",
+    "Furar transmissão"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
