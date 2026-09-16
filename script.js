@@ -87,7 +87,6 @@ const atividadesDisponiveisLegado = [
     "Troca da transfer-case",
     "Descarte da transfer-case",
     "Retirar semi-eixo",
-    "Desmontagem de semi-eixo",
     "Furar transmissão"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
