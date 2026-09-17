@@ -87,5 +87,6 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Troca da transfer-case",
     "Descarte da transfer-case",
     "Retirar semi-eixo",
-    "Furar transmissão"
+    "Furar transmissão",
+    "Subistituir inversor câmbio e-DCT"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
