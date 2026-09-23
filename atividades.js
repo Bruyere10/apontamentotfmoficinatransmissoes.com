@@ -88,5 +88,10 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Descarte da transfer-case",
     "Retirar semi-eixo",
     "Furar transmissão",
-    "Subistituir inversor câmbio e-DCT"
+    "Subistituir inversor câmbio e-DCT",
+    "Troca de embreagem",
+    "Retirada de óleo e abastecimento de óleo câmbio e-DCT",
+    "Troca do conjunto de embreagem câmbio C513",
+    "Retirada óleo do câmbio e-DCT 4.5 Litros",
+    "Reparação em conectores"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
