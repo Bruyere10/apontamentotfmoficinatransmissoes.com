@@ -94,5 +94,6 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Troca do conjunto de embreagem câmbio C513",
     "Retirada óleo do câmbio e-DCT 4.5 Litros",
     "Reparação em conectores",
-    "Desmontar Eixo Cardan para Diagnose"
+    "Desmontar Eixo Cardan para Diagnose",
+    "Veículo puxando Direção"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
