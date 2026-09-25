@@ -1029,6 +1029,49 @@ function buscarDocumentoPorTfm(tfm) {
   return buscarDocumentosPorTfms([tfm])[0];
 }
 
+function buscarPeriodosTfmsFechados(tfms) {
+  const aba = obterArquivoPlanilha().getSheetByName(CONFIG.nomeAbaTfmsAbertos);
+
+  if (!aba || aba.getLastRow() < 2) {
+    return {};
+  }
+
+  const dados = aba.getDataRange().getValues();
+  const cabecalhos = dados[0] || [];
+  const colunaStatus = obterIndiceCabecalho(cabecalhos, ["Status"]);
+  const colunaTfm = obterIndiceCabecalho(cabecalhos, ["TFM"]);
+  const colunaDataInicial = obterIndiceCabecalho(cabecalhos, ["Data Inicial"]);
+  const colunaDataFinal = obterIndiceCabecalho(cabecalhos, ["Data Final"]);
+  const tfmsBuscados = new Set(tfms);
+  const periodos = {};
+
+  if (colunaStatus < 0 || colunaTfm < 0 || colunaDataInicial < 0 || colunaDataFinal < 0) {
+    return periodos;
+  }
+
+  for (let indice = 1; indice < dados.length; indice += 1) {
+    const linha = dados[indice];
+    const tfm = String(linha[colunaTfm] || "").trim();
+
+    if (!tfmsBuscados.has(tfm) || normalizarCabecalho(linha[colunaStatus]) !== "fechado") {
+      continue;
+    }
+
+    const inicio = normalizarValorPlanilha(linha[colunaDataInicial]);
+    const fim = normalizarValorPlanilha(linha[colunaDataFinal]);
+
+    if (!periodos[tfm]) {
+      periodos[tfm] = { inicio, fim };
+      continue;
+    }
+
+    if (inicio && (!periodos[tfm].inicio || inicio < periodos[tfm].inicio)) periodos[tfm].inicio = inicio;
+    if (fim && (!periodos[tfm].fim || fim > periodos[tfm].fim)) periodos[tfm].fim = fim;
+  }
+
+  return periodos;
+}
+
 function buscarDocumentosPorTfms(tfms) {
   const aba = obterAbaPrincipal();
   const dados = aba.getDataRange().getValues();
@@ -1053,6 +1096,7 @@ function buscarDocumentosPorTfms(tfms) {
 
   const tfmsNormalizados = [...new Set(tfms.map((item) => String(item || "").trim()).filter(Boolean))];
   const tfmsBuscados = new Set(tfmsNormalizados);
+  const periodosTfmsFechados = buscarPeriodosTfmsFechados(tfmsNormalizados);
   const resultados = tfmsNormalizados.reduce((acumulador, item) => {
     acumulador[item] = {
       sucesso: true,
@@ -1125,6 +1169,10 @@ function buscarDocumentosPorTfms(tfms) {
       resultado.dataInicioTfm = datas[0];
       resultado.dataFimTfm = datas[datas.length - 1];
     }
+
+    const periodoFechado = periodosTfmsFechados[tfm];
+    if (periodoFechado?.inicio) resultado.dataInicioTfm = periodoFechado.inicio;
+    if (periodoFechado?.fim) resultado.dataFimTfm = periodoFechado.fim;
 
     const colaboradoresDasLinhas = Object.keys(resultado._colaboradores)
       .filter((chave) => chave !== resultado._colaboradorPrincipalChave)

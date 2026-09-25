@@ -3008,6 +3008,95 @@ function obterPeriodoRegistros(dados, registros) {
     };
 }
 
+function criarListaDatasPeriodo(inicio, fim, lancamentos = []) {
+    const datasLancamentos = lancamentos
+        .map((lancamento) => normalizarDataInput(lancamento.data))
+        .filter(Boolean)
+        .sort();
+    const dataInicial = normalizarDataInput(inicio) || datasLancamentos[0];
+    const dataFinal = normalizarDataInput(fim) || datasLancamentos[datasLancamentos.length - 1];
+
+    if (!dataInicial || !dataFinal) return [];
+
+    const atual = new Date(`${dataInicial}T00:00:00Z`);
+    const limite = new Date(`${dataFinal}T00:00:00Z`);
+    const datas = [];
+
+    while (atual <= limite) {
+        datas.push(atual.toISOString().slice(0, 10));
+        atual.setUTCDate(atual.getUTCDate() + 1);
+    }
+
+    return datas;
+}
+
+function criarDetalhesHorasDiarias(dados, registros, periodo) {
+    const colaboradoresAdicionais = Array.isArray(dados.colaboradoresAdicionais) ? dados.colaboradoresAdicionais : [];
+    const pessoas = [{
+        nome: dados.nome,
+        matricula: dados.matricula,
+        lancamentos: registros
+    }, ...colaboradoresAdicionais];
+    const detalhes = document.createElement("details");
+    detalhes.className = "horas-diarias";
+
+    const resumo = document.createElement("summary");
+    resumo.innerHTML = `<i class="bi bi-calendar3"></i><span>Ver horas diárias</span><i class="bi bi-chevron-down horas-diarias-seta"></i>`;
+    detalhes.appendChild(resumo);
+
+    const conteudo = document.createElement("div");
+    conteudo.className = "horas-diarias-conteudo";
+
+    pessoas.forEach((pessoa) => {
+        const lancamentos = Array.isArray(pessoa.lancamentos) ? pessoa.lancamentos : [];
+        const horasPorData = new Map();
+
+        lancamentos.forEach((lancamento) => {
+            const data = normalizarDataInput(lancamento.data);
+            if (!data) return;
+            horasPorData.set(data, (horasPorData.get(data) || 0) + converterHorasNumero(lancamento.horas));
+        });
+
+        const datas = criarListaDatasPeriodo(periodo.inicio, periodo.fim, lancamentos);
+        if (!datas.length) return;
+
+        const total = [...horasPorData.values()].reduce((soma, horas) => soma + horas, 0);
+        const pessoaContainer = document.createElement("section");
+        pessoaContainer.className = "horas-diarias-pessoa";
+
+        const cabecalho = document.createElement("div");
+        cabecalho.className = "horas-diarias-pessoa-cabecalho";
+        const identificacao = document.createElement("div");
+        const nome = document.createElement("strong");
+        nome.textContent = pessoa.nome || "Colaborador";
+        const matricula = document.createElement("span");
+        matricula.textContent = pessoa.matricula ? `Matrícula ${pessoa.matricula}` : "Matrícula não informada";
+        identificacao.append(nome, matricula);
+        const totalPessoa = document.createElement("strong");
+        totalPessoa.textContent = formatarHoras(total);
+        cabecalho.append(identificacao, totalPessoa);
+        pessoaContainer.appendChild(cabecalho);
+
+        const lista = document.createElement("div");
+        lista.className = "horas-diarias-lista";
+        datas.forEach((data) => {
+            const horas = horasPorData.get(data) || 0;
+            const linha = document.createElement("div");
+            const dataTexto = document.createElement("span");
+            const horasTexto = document.createElement("strong");
+            dataTexto.textContent = formatarData(data);
+            horasTexto.textContent = `${horas.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} ${horas === 1 ? "hora" : "horas"}`;
+            linha.append(dataTexto, horasTexto);
+            lista.appendChild(linha);
+        });
+        pessoaContainer.appendChild(lista);
+        conteudo.appendChild(pessoaContainer);
+    });
+
+    detalhes.appendChild(conteudo);
+    return detalhes;
+}
+
 function normalizarDataInput(valor) {
     if (!valor) {
         return "";
@@ -3342,6 +3431,7 @@ function criarResultadoTfm(dados) {
 
     conteudo.appendChild(cabecalho);
     conteudo.appendChild(resumo);
+    conteudo.appendChild(criarDetalhesHorasDiarias(dados, registros, periodo));
 
     if (colaboradoresAdicionais.length) {
         const colaboradores = document.createElement("div");
