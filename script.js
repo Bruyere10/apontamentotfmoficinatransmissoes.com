@@ -95,7 +95,8 @@ const atividadesDisponiveisLegado = [
     "Retirada óleo do câmbio e-DCT 4.5 Litros",
     "Reparação em conectores",
     "Desmontar Eixo Cardan para Diagnose",
-    "Veículo puxando Direção"
+    "Veículo puxando Direção",
+    "Rodagem para aquisição de dados"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -1235,7 +1236,11 @@ async function consultarAlertasDisponibilidade(colaborador, exibirAviso = false)
         if (!resposta.ok || !dados.sucesso) throw new Error(dados.erro || "Falha ao consultar notificações.");
         if (usuarioAtual?.matricula !== colaborador.matricula) return;
 
-        const alertas = Array.isArray(dados.alertas) ? dados.alertas : [];
+        const agora = new Date();
+        const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+        const alertas = Array.isArray(dados.alertas)
+            ? dados.alertas.filter((alerta) => String(alerta.data || "") < hoje)
+            : [];
         const chaveHistorico = `alertas-disponibilidade-anteriores:${colaborador.matricula}`;
         const chavesAnteriores = new Set(JSON.parse(localStorage.getItem(chaveHistorico) || "[]"));
         chavesAlertasNovos = new Set(alertas.map(obterChaveAlertaDisponibilidade).filter((chave) => !chavesAnteriores.has(chave)));

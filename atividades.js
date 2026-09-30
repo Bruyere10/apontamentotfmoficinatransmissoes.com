@@ -95,5 +95,6 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Retirada óleo do câmbio e-DCT 4.5 Litros",
     "Reparação em conectores",
     "Desmontar Eixo Cardan para Diagnose",
-    "Veículo puxando Direção"
+    "Veículo puxando Direção",
+    "Rodagem para aquisição de dados"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
