@@ -96,5 +96,8 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Reparação em conectores",
     "Desmontar Eixo Cardan para Diagnose",
     "Veículo puxando Direção",
-    "Rodagem para aquisição de dados"
+    "Rodagem para aquisição de dados",
+    "Desmontagem da transmissão da KP1",
+    "Desmontagem de câmbio C513 e atualizar as peças do mesmo",
+    "Retirar instrumentação"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
