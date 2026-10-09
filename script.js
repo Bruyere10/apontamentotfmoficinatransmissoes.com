@@ -99,7 +99,8 @@ const atividadesDisponiveisLegado = [
     "Rodagem para aquisição de dados",
     "Desmontagem da transmissão da KP1",
     "Desmontagem de câmbio C513 e atualizar as peças do mesmo",
-    "Retirar instrumentação"
+    "Retirar instrumentação",
+    "Instrumentação de câmbio com termopares"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
 const atividadesDisponiveis = Array.isArray(window.ATIVIDADES_DISPONIVEIS)
     ? window.ATIVIDADES_DISPONIVEIS
@@ -2754,7 +2755,7 @@ async function carregarDesempenhoColaborador() {
             desempenhoPlanilhaMatricula = "";
             desempenhoErro = erro.name === "AbortError"
                 ? "A consulta ao banco demorou mais que o esperado. Tente abrir Meu Desempenho novamente."
-                : "Não foi possível carregar o desempenho do banco de dados. Publique a versão atualizada do Apps Script e tente novamente.";
+                : erro.message || "Não foi possível carregar o desempenho do banco de dados.";
             console.error(erro);
         }
     } finally {

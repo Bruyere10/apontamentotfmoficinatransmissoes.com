@@ -99,5 +99,6 @@ window.ATIVIDADES_DISPONIVEIS = [
     "Rodagem para aquisição de dados",
     "Desmontagem da transmissão da KP1",
     "Desmontagem de câmbio C513 e atualizar as peças do mesmo",
-    "Retirar instrumentação"
+    "Retirar instrumentação",
+    "Instrumentação de câmbio com termopares"
 ].sort((primeira, segunda) => primeira.localeCompare(segunda, "pt-BR"));
